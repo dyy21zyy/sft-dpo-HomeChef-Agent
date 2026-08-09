@@ -119,6 +119,7 @@ ASSERTION_REGISTRY: dict[str, AssertionFn] = {
     "no_fabricated_chef": _tool_fact_grounded,
     "no_tool_retry": _does_not_call_tool,
     "no_unauthorized_booking": _authorized_only_with_allowlist,
+    "invalid_json": _protocol_invalid_json,
     "protocol_invalid_json": _protocol_invalid_json,
     "unavailable_requested_chef_not_selected": _unavailable_requested_chef_not_selected,
     "unrelated_handoff": _unrelated_handoff,
