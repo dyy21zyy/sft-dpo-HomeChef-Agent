@@ -1,0 +1,6 @@
+run_id: phase02_diag_mock
+cases_path: data/dev/diagnostic_dev.jsonl
+backend_config_path: configs/inference/mock.yaml
+manifest_path: data/dev/diagnostic_dev.manifest.json
+output_dir: reports/generated
+suite_id: phase02_diagnostic_dev_v1

@@ -1,0 +1,6 @@
+run_id: phase02_frozen_mock
+cases_path: data/eval/frozen_test.jsonl
+backend_config_path: configs/inference/mock.yaml
+manifest_path: data/eval/frozen_test.manifest.json
+output_dir: reports/generated
+suite_id: phase02_frozen_test_v1
