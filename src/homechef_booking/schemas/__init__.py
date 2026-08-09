@@ -17,8 +17,32 @@ from homechef_booking.schemas.decision import (
     ToolCallDecision,
     parse_decision_obj,
 )
+from homechef_booking.schemas.history import (
+    AssistantTextMessage,
+    AssistantToolCallMessage,
+    HistoryMessage,
+    ToolCall,
+    ToolCallFunction,
+    ToolMessage,
+    UserMessage,
+    parse_history_messages,
+    validate_history_sequence,
+)
 from homechef_booking.schemas.runtime import BookingRuntimeInput
-from homechef_booking.schemas.tools import FindChefsInput
+from homechef_booking.schemas.tools import (
+    FindChefsInput,
+    FindChefsResult,
+    SearchErrorResult,
+    SearchMatchedResult,
+    SearchNoMatchResult,
+    SearchOutOfServiceAreaResult,
+    SpecificAvailableResult,
+    SpecificErrorResult,
+    SpecificNotFoundResult,
+    SpecificOutOfServiceAreaResult,
+    SpecificUnavailableResult,
+    parse_find_chefs_result,
+)
 
 __all__ = [
     "BookingSlot",
@@ -34,6 +58,26 @@ __all__ = [
     "FinalDecision",
     "ToolCallDecision",
     "parse_decision_obj",
+    "AssistantTextMessage",
+    "AssistantToolCallMessage",
+    "HistoryMessage",
+    "ToolCall",
+    "ToolCallFunction",
+    "ToolMessage",
+    "UserMessage",
+    "parse_history_messages",
+    "validate_history_sequence",
     "BookingRuntimeInput",
     "FindChefsInput",
+    "FindChefsResult",
+    "SearchErrorResult",
+    "SearchMatchedResult",
+    "SearchNoMatchResult",
+    "SearchOutOfServiceAreaResult",
+    "SpecificAvailableResult",
+    "SpecificErrorResult",
+    "SpecificNotFoundResult",
+    "SpecificOutOfServiceAreaResult",
+    "SpecificUnavailableResult",
+    "parse_find_chefs_result",
 ]
