@@ -1,0 +1,4 @@
+run_id: smoke_hf_test
+cases_path: tests/fixtures/evaluation/smoke_1_case.jsonl
+backend_config_path: configs/inference/hf_0_6b.yaml
+output_dir: reports/generated/smoke

@@ -1,0 +1,11 @@
+run_id: phase02_base_1_7b_diagnostic
+cases_path: data/dev/diagnostic_dev.jsonl
+backend_config_path: configs/inference/hf_1_7b.yaml
+manifest_path: data/dev/diagnostic_dev.manifest.json
+output_dir: reports/generated/phase02/base_1_7b/diagnostic_dev
+model_id: Qwen/Qwen3-1.7B-Base
+suite_id: phase02_diagnostic_dev_v1
+device: cpu
+torch_dtype: float32
+notes: "Phase 02 M0: Qwen3-1.7B-Base on Diagnostic Dev (80 cases)"
+tags: ["base_benchmark", "1.7b", "diagnostic"]

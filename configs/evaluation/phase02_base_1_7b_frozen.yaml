@@ -1,0 +1,11 @@
+run_id: phase02_base_1_7b_frozen
+cases_path: data/eval/frozen_test.jsonl
+backend_config_path: configs/inference/hf_1_7b.yaml
+manifest_path: data/eval/frozen_test.manifest.json
+output_dir: reports/generated/phase02/base_1_7b/frozen_test
+model_id: Qwen/Qwen3-1.7B-Base
+suite_id: phase02_frozen_test_v1
+device: cpu
+torch_dtype: float32
+notes: "Phase 02 M0: Qwen3-1.7B-Base on Frozen Test (120 cases)"
+tags: ["base_benchmark", "1.7b", "frozen"]
