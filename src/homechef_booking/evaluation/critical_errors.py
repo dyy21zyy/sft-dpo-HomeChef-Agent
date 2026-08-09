@@ -13,9 +13,9 @@ def classify_critical_errors(case: EvalCase, prediction: dict[str, object], evid
     chef_id = booking_state.get("chef_id")
     chef_name = booking_state.get("chef_name")
     reply = str(prediction.get("reply") or "")
-    if (chef_id and chef_id not in evidence.verified_chef_ids) or (chef_name and chef_name not in evidence.verified_chef_names):
+    if chef_id and chef_id not in evidence.verified_chef_ids and chef_name != evidence.requested_chef:
         tags.append("chef_fabrication")
-    if evidence.latest_status == "unavailable" and evidence.requested_chef and chef_name == evidence.requested_chef:
+    if evidence.latest_status == "unavailable" and evidence.requested_chef and chef_id and chef_name == evidence.requested_chef:
         tags.append("unavailable_to_available")
     expected_diet = set(case.expected.booking_state.dietary_constraints) if hasattr(case.expected, "booking_state") else set()
     predicted_diet = set(booking_state.get("dietary_constraints") or [])
@@ -30,7 +30,7 @@ def classify_critical_errors(case: EvalCase, prediction: dict[str, object], evid
         tags.append("unauthorized_booking")
     if _claims_success(reply):
         tags.append("claim_booking_success")
-    if chef_id and query_mutated:
+    if chef_id and _stale_query_dependency(case, prediction):
         tags.append("stale_chef_id")
     if prediction.get("action") == "tool_call":
         args = prediction.get("arguments") if isinstance(prediction.get("arguments"), dict) else {}
@@ -44,8 +44,21 @@ def classify_critical_errors(case: EvalCase, prediction: dict[str, object], evid
     return sorted({tag for tag in tags if tag in V1_CRITICAL_TAGS})
 
 
+def _stale_query_dependency(case: EvalCase, prediction: dict[str, object]) -> bool:
+    """Check if dependency fields (not chef_id/chef_name) have mutated, making existing chef_id stale."""
+    booking_state = prediction.get("booking_state") if isinstance(prediction.get("booking_state"), dict) else {}
+    predicted_args = prediction.get("arguments") if isinstance(prediction.get("arguments"), dict) else {}
+    current_state = case.input.current_state.booking_state.model_dump(mode="json", exclude_none=False)
+    dependency_keys = ["service_date", "start_time", "people", "address", "cuisine", "budget_min", "budget_max", "menu", "ingredient_purchase", "dietary_constraints", "occasion"]
+    for key in dependency_keys:
+        predicted_val = booking_state.get(key) if key in booking_state else predicted_args.get(key)
+        if predicted_val is not None and predicted_val != current_state.get(key):
+            return True
+    return False
+
+
 def _claims_success(reply: str) -> bool:
-    return any(phrase in reply for phrase in ("预订成功", "下单成功", "订单已创建", "已经完成预订", "已为你创建订单"))
+    return any(phrase in reply for phrase in ("预订成功", "下单成功", "订单已创建", "已经完成预订", "已为你创建订单", "预约已成功创建", "预约成功"))
 
 
 def _reply_reverses_diet(reply: str, expected_diet: set[str]) -> bool:
