@@ -140,7 +140,6 @@ def validate_runtime_input(
                     message=err["msg"],
                 )
             )
-        return issues
 
     if isinstance(value.get("history"), list):
         try:

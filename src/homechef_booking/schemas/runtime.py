@@ -37,6 +37,77 @@ _FIND_CHEFS_REQUIRED_KEYS = frozenset({
     "occasion",
 })
 
+# Canonical find_chefs parameters contract — single source of truth
+# aligned with contracts/find_chefs_v1.schema.json -> FindChefsInput
+_CANONICAL_FIND_CHEFS_PROPERTIES: dict = {
+    "chef_name": {"type": ["string", "null"]},
+    "service_date": {
+        "type": ["string", "null"],
+        "pattern": r"^\d{4}-\d{2}-\d{2}$",
+        "format": "date",
+    },
+    "start_time": {
+        "type": ["string", "null"],
+        "pattern": r"^([01]\d|2[0-3]):[0-5]\d$",
+    },
+    "people": {"type": ["integer", "null"]},
+    "address": {"type": ["string", "null"]},
+    "cuisine": {"type": ["string", "null"]},
+    "budget_min": {"type": ["number", "null"]},
+    "budget_max": {"type": ["number", "null"]},
+    "menu": {"type": "array", "items": {"type": "string"}},
+    "ingredient_purchase": {"type": ["boolean", "null"]},
+    "dietary_constraints": {"type": "array", "items": {"type": "string"}},
+    "occasion": {"type": ["string", "null"]},
+}
+
+
+def _normalize_prop_def(prop: object) -> object:
+    """Normalize a property definition for semantic comparison.
+
+    Converts regex pattern strings and type lists to sorted tuples so that
+    semantically identical definitions compare equal.
+    """
+    if not isinstance(prop, dict):
+        return prop
+    result: dict = {}
+    for k, v in prop.items():
+        if k == "type" and isinstance(v, list):
+            result[k] = tuple(sorted(str(t) for t in v))
+        else:
+            result[k] = v
+    return result
+
+
+def _properties_match(
+    actual: dict,
+    canonical: dict,
+) -> tuple[bool, str]:
+    """Compare actual ToolSpec properties against canonical contract.
+
+    Returns (match: bool, error: str).
+    """
+    actual_keys = set(actual.keys())
+    canonical_keys = set(canonical.keys())
+
+    if actual_keys != canonical_keys:
+        extra = actual_keys - canonical_keys
+        missing = canonical_keys - actual_keys
+        msg = "properties keys mismatch"
+        if extra:
+            msg += f", extra: {sorted(extra)}"
+        if missing:
+            msg += f", missing: {sorted(missing)}"
+        return False, msg
+
+    for key in canonical_keys:
+        actual_norm = _normalize_prop_def(actual[key])
+        canon_norm = _normalize_prop_def(canonical[key])
+        if actual_norm != canon_norm:
+            return False, f"property '{key}' definition mismatch"
+
+    return True, ""
+
 
 class ToolFunctionSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -50,14 +121,14 @@ class ToolFunctionSpec(BaseModel):
         params = self.parameters
         if not isinstance(params, dict):
             return self
+
         if params.get("type") != "object":
-            raise ValueError(
-                "Tool parameters.type must be 'object'"
-            )
+            raise ValueError("Tool parameters.type must be 'object'")
         if params.get("additionalProperties") is not False:
             raise ValueError(
                 "Tool parameters must have additionalProperties: false"
             )
+
         required = params.get("required")
         if not isinstance(required, list) or sorted(required) != sorted(
             _FIND_CHEFS_REQUIRED_KEYS
@@ -66,22 +137,15 @@ class ToolFunctionSpec(BaseModel):
                 "Tool parameters.required must be exactly the 12 "
                 "FindChefsInput keys"
             )
+
         properties = params.get("properties")
         if not isinstance(properties, dict):
             raise ValueError("Tool parameters.properties must be a dict")
-        prop_keys = set(properties.keys())
-        if prop_keys != _FIND_CHEFS_REQUIRED_KEYS:
-            extra = prop_keys - _FIND_CHEFS_REQUIRED_KEYS
-            missing = _FIND_CHEFS_REQUIRED_KEYS - prop_keys
-            msg = (
-                "Tool parameters.properties must be exactly the 12 "
-                "FindChefsInput keys"
-            )
-            if extra:
-                msg += f", extra: {sorted(extra)}"
-            if missing:
-                msg += f", missing: {sorted(missing)}"
-            raise ValueError(msg)
+
+        match_ok, err = _properties_match(properties, _CANONICAL_FIND_CHEFS_PROPERTIES)
+        if not match_ok:
+            raise ValueError(f"Tool parameters.properties: {err}")
+
         return self
 
 

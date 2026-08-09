@@ -16,6 +16,7 @@ from homechef_booking.schemas.decision import (
     ToolCallDecision,
     parse_decision_obj,
 )
+from homechef_booking.schemas.runtime import _FIND_CHEFS_REQUIRED_KEYS  # noqa: F401
 from homechef_booking.schemas.tools import FindChefsInput, parse_find_chefs_result
 from homechef_booking.validation.contract_validator import (
     validate_decision,
@@ -752,3 +753,147 @@ def test_budget_rejects_string_and_bool() -> None:
         BookingSlot(budget_min="800")
     with pytest.raises(ValidationError):
         BookingSlot(budget_max=True)
+
+
+# --- ToolSpec parity regression tests ---
+
+
+def _make_runtime_with_params(params: dict) -> dict:
+    runtime = load(VALID / "minimal_runtime_input.json")
+    runtime["available_tools"][0]["function"]["parameters"] = params
+    return runtime
+
+
+def test_toolspec_type_other_fails() -> None:
+    runtime = load(VALID / "minimal_runtime_input.json")
+    runtime["available_tools"][0]["type"] = "other"
+    issues = validate_runtime_input(runtime)
+    assert any("type" in i.path for i in issues)
+
+
+def test_toolspec_function_name_other_fails() -> None:
+    runtime = load(VALID / "minimal_runtime_input.json")
+    runtime["available_tools"][0]["function"]["name"] = "other"
+    issues = validate_runtime_input(runtime)
+    assert any("name" in i.path for i in issues)
+
+
+def test_toolspec_people_type_string_fails() -> None:
+    params = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": list(sorted(_FIND_CHEFS_REQUIRED_KEYS)),  # noqa: F821
+        "properties": {
+            "chef_name": {"type": ["string", "null"]},
+            "service_date": {
+                "type": ["string", "null"],
+                "pattern": r"^\d{4}-\d{2}-\d{2}$",
+                "format": "date",
+            },
+            "start_time": {
+                "type": ["string", "null"],
+                "pattern": r"^([01]\d|2[0-3]):[0-5]\d$",
+            },
+            "people": {"type": ["string", "null"]},
+            "address": {"type": ["string", "null"]},
+            "cuisine": {"type": ["string", "null"]},
+            "budget_min": {"type": ["number", "null"]},
+            "budget_max": {"type": ["number", "null"]},
+            "menu": {"type": "array", "items": {"type": "string"}},
+            "ingredient_purchase": {"type": ["boolean", "null"]},
+            "dietary_constraints": {"type": "array", "items": {"type": "string"}},
+            "occasion": {"type": ["string", "null"]},
+        },
+    }
+    runtime = _make_runtime_with_params(params)
+    issues = validate_runtime_input(runtime)
+    assert any("people" in i.message for i in issues)
+
+
+def test_toolspec_service_date_missing_format_fails() -> None:
+    params = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": list(sorted(_FIND_CHEFS_REQUIRED_KEYS)),  # noqa: F821
+        "properties": {
+            "chef_name": {"type": ["string", "null"]},
+            "service_date": {"type": ["string", "null"]},
+            "start_time": {
+                "type": ["string", "null"],
+                "pattern": r"^([01]\d|2[0-3]):[0-5]\d$",
+            },
+            "people": {"type": ["integer", "null"]},
+            "address": {"type": ["string", "null"]},
+            "cuisine": {"type": ["string", "null"]},
+            "budget_min": {"type": ["number", "null"]},
+            "budget_max": {"type": ["number", "null"]},
+            "menu": {"type": "array", "items": {"type": "string"}},
+            "ingredient_purchase": {"type": ["boolean", "null"]},
+            "dietary_constraints": {"type": "array", "items": {"type": "string"}},
+            "occasion": {"type": ["string", "null"]},
+        },
+    }
+    runtime = _make_runtime_with_params(params)
+    issues = validate_runtime_input(runtime)
+    assert any("service_date" in i.message for i in issues)
+
+
+def test_toolspec_start_time_wrong_pattern_fails() -> None:
+    params = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": list(sorted(_FIND_CHEFS_REQUIRED_KEYS)),  # noqa: F821
+        "properties": {
+            "chef_name": {"type": ["string", "null"]},
+            "service_date": {
+                "type": ["string", "null"],
+                "pattern": r"^\d{4}-\d{2}-\d{2}$",
+                "format": "date",
+            },
+            "start_time": {"type": ["string", "null"], "pattern": ".*"},
+            "people": {"type": ["integer", "null"]},
+            "address": {"type": ["string", "null"]},
+            "cuisine": {"type": ["string", "null"]},
+            "budget_min": {"type": ["number", "null"]},
+            "budget_max": {"type": ["number", "null"]},
+            "menu": {"type": "array", "items": {"type": "string"}},
+            "ingredient_purchase": {"type": ["boolean", "null"]},
+            "dietary_constraints": {"type": "array", "items": {"type": "string"}},
+            "occasion": {"type": ["string", "null"]},
+        },
+    }
+    runtime = _make_runtime_with_params(params)
+    issues = validate_runtime_input(runtime)
+    assert any("start_time" in i.message for i in issues)
+
+
+def test_toolspec_correct_complete_schema_passes() -> None:
+    params = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": list(sorted(_FIND_CHEFS_REQUIRED_KEYS)),  # noqa: F821
+        "properties": {
+            "chef_name": {"type": ["string", "null"]},
+            "service_date": {
+                "type": ["string", "null"],
+                "pattern": r"^\d{4}-\d{2}-\d{2}$",
+                "format": "date",
+            },
+            "start_time": {
+                "type": ["string", "null"],
+                "pattern": r"^([01]\d|2[0-3]):[0-5]\d$",
+            },
+            "people": {"type": ["integer", "null"]},
+            "address": {"type": ["string", "null"]},
+            "cuisine": {"type": ["string", "null"]},
+            "budget_min": {"type": ["number", "null"]},
+            "budget_max": {"type": ["number", "null"]},
+            "menu": {"type": "array", "items": {"type": "string"}},
+            "ingredient_purchase": {"type": ["boolean", "null"]},
+            "dietary_constraints": {"type": "array", "items": {"type": "string"}},
+            "occasion": {"type": ["string", "null"]},
+        },
+    }
+    runtime = _make_runtime_with_params(params)
+    issues = validate_runtime_input(runtime)
+    assert issues == []

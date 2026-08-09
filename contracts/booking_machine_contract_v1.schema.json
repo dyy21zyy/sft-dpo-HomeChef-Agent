@@ -222,15 +222,35 @@
       "additionalProperties": false,
       "required": ["type", "function"],
       "properties": {
-        "type": { "type": "string" },
+        "type": { "const": "function" },
         "function": {
           "type": "object",
           "additionalProperties": false,
           "required": ["name", "description", "parameters"],
           "properties": {
-            "name": { "type": "string" },
+            "name": { "const": "find_chefs" },
             "description": { "type": "string" },
-            "parameters": { "type": "object" }
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "additionalProperties", "required", "properties"],
+              "properties": {
+                "type": { "const": "object" },
+                "additionalProperties": { "const": false },
+                "required": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "minItems": 12,
+                  "maxItems": 12
+                },
+                "properties": {
+                  "type": "object",
+                  "required": ["chef_name","service_date","start_time","people","address","cuisine","budget_min","budget_max","menu","ingredient_purchase","dietary_constraints","occasion"],
+                  "minProperties": 12,
+                  "maxProperties": 12
+                }
+              }
+            }
           }
         }
       }
@@ -357,15 +377,35 @@
       "additionalProperties": false,
       "required": ["type", "function"],
       "properties": {
-        "type": { "type": "string" },
+        "type": { "const": "function" },
         "function": {
           "type": "object",
           "additionalProperties": false,
           "required": ["name", "description", "parameters"],
           "properties": {
-            "name": { "type": "string" },
+            "name": { "const": "find_chefs" },
             "description": { "type": "string" },
-            "parameters": { "type": "object" }
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "additionalProperties", "required", "properties"],
+              "properties": {
+                "type": { "const": "object" },
+                "additionalProperties": { "const": false },
+                "required": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "minItems": 12,
+                  "maxItems": 12
+                },
+                "properties": {
+                  "type": "object",
+                  "required": ["chef_name","service_date","start_time","people","address","cuisine","budget_min","budget_max","menu","ingredient_purchase","dietary_constraints","occasion"],
+                  "minProperties": 12,
+                  "maxProperties": 12
+                }
+              }
+            }
           }
         }
       }
