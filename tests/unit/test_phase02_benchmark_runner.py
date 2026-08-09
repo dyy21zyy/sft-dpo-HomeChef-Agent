@@ -1,6 +1,5 @@
 """Task 5 Phase 02: Benchmark runner tests."""
 
-import json
 from pathlib import Path
 
 from homechef_booking.evaluation.benchmark_runner import (

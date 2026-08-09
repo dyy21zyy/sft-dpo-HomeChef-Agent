@@ -1,7 +1,8 @@
 """Generate Phase 02 suite manifests after ChatGPT approval."""
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
+
 from homechef_booking.evaluation.suite_manifest import compute_sha256
 
 FROZEN_JSONL = Path("data/eval/frozen_test.jsonl")
@@ -9,7 +10,7 @@ FROZEN_MANIFEST = Path("data/eval/frozen_test.manifest.json")
 DIAG_JSONL = Path("data/dev/diagnostic_dev.jsonl")
 DIAG_MANIFEST = Path("data/dev/diagnostic_dev.manifest.json")
 
-now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 frozen_sha = compute_sha256(FROZEN_JSONL)
 frozen_manifest = {

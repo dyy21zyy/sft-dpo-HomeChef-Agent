@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 from homechef_booking.evaluation.benchmark_runner import BenchmarkConfig, BenchmarkResult
 
@@ -17,7 +17,7 @@ def generate_data_card(result: BenchmarkResult, config: BenchmarkConfig, output_
         "model_id": result.model_id,
         "suite_id": result.suite_id,
         "run_id": result.run_id,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "frozen_suite": config.manifest_path is not None,
         "no_sft_dpo_training": True,
         "no_model_downloaded": True,

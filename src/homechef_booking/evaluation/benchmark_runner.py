@@ -6,8 +6,8 @@ import json
 import platform
 import time
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -33,7 +33,7 @@ class BenchmarkConfig:
     tags: list[str] = field(default_factory=list)
 
     @classmethod
-    def load_yaml(cls, path: Path) -> "BenchmarkConfig":
+    def load_yaml(cls, path: Path) -> BenchmarkConfig:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         return cls(
             run_id=data["run_id"],
@@ -72,7 +72,7 @@ class BenchmarkResult(BaseModel):
     hardware_info: dict[str, str] | None = None
     notes: str = ""
     tags: list[str] = Field(default_factory=list)
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 def run_benchmark(config: BenchmarkConfig) -> BenchmarkResult:

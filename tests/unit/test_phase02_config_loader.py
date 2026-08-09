@@ -1,6 +1,5 @@
 """Task 3 Phase 02: Suite configs and case loader smoke tests."""
 
-import json
 from pathlib import Path
 
 from homechef_booking.evaluation.sample import load_eval_cases

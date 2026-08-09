@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from homechef_booking.inference.backend import GenerationParams
 from homechef_booking.inference.response import GenerationResult
@@ -37,7 +37,7 @@ class HFBackendConfig(BaseModel):
     timeout_seconds: float | None = 120.0
 
     @model_validator(mode="after")
-    def _validate_model_id(self) -> "HFBackendConfig":
+    def _validate_model_id(self) -> HFBackendConfig:
         if self.model_id in ALLOWED_MODEL_IDS:
             return self
         for pattern, category in FORBIDDEN_MODEL_PATTERNS:

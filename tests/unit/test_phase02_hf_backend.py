@@ -1,11 +1,10 @@
 """Task 4 Phase 02: HuggingFace Transformers backend tests."""
 
-from pathlib import Path
 
 import pytest
 
-from homechef_booking.inference.hf_backend import HFTransformersBackend, HFBackendConfig
 from homechef_booking.inference.backend import GenerationParams
+from homechef_booking.inference.hf_backend import HFBackendConfig, HFTransformersBackend
 
 
 def test_hf_backend_config_accepts_valid_model_ids():

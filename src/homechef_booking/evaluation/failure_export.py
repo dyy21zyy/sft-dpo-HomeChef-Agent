@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 
 def export_failure_report(case_results_path: Path, output_path: Path, suite_id: str = "") -> Path:
@@ -19,7 +19,7 @@ def export_failure_report(case_results_path: Path, output_path: Path, suite_id: 
             failure_by_tag.setdefault(tag, []).append(case["id"])
     report = {
         "suite_id": suite_id or case_results_path.stem,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "summary": {
             "total_cases": len(case_results),
             "total_failed": len(failed),

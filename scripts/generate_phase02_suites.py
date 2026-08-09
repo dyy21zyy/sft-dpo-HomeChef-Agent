@@ -124,7 +124,7 @@ for i, (slot, ask_phrase, field) in enumerate([
 ], 1):
     st = empty_state()
     st["booking_state"].update({slot: None})
-    inp = base_input(f"请帮我预约私厨", available_tools=[], booking_state={slot: None})
+    inp = base_input("请帮我预约私厨", available_tools=[], booking_state={slot: None})
     exp = final_decision(info_complete=False, missing_info=[field], reply_type=f"ask_{field}", reply=ask_phrase)
     frozen.append(make_case(f"frozen_missing_{i:03d}", "final", "single_turn", inp, exp,
                             assertions=["asks_missing_info"], tags=["missing_required_slots"]))
@@ -944,6 +944,7 @@ print(f"Diagnostic Dev: {len(diag)} cases written to {DIAG_OUT}")
 
 # Print taxonomy audit
 from collections import Counter
+
 frozen_tags = Counter()
 for c in frozen:
     for t in c["tags"]:

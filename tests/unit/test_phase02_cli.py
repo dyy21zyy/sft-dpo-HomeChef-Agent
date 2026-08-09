@@ -1,7 +1,6 @@
 """Task 7 Phase 02: CLI compatibility tests for Phase 02 benchmark commands."""
 
 import subprocess
-import sys
 from pathlib import Path
 
 
