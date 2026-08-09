@@ -282,7 +282,7 @@ def _check_candidate_provenance(
                     tool_candidates = result["alternatives"]
             except (json.JSONDecodeError, ValueError):
                 pass
-    if tool_candidates:
+    if tool_candidates and decision.candidate_chefs:
         tool_ids = [c.get("chef_id") for c in tool_candidates]
         decision_ids = [c.chef_id for c in decision.candidate_chefs]
         if decision_ids != tool_ids and set(decision_ids) <= set(tool_ids):
@@ -348,6 +348,49 @@ def _check_state_invalidation(
                 break
 
 
+def _build_verified_chef_set(runtime_input: dict) -> set[str]:
+    """Build the effective verified chef set from Tool Results and current_state.
+
+    Includes:
+    - search/matched.candidates[*].chef_id
+    - specific/unavailable.alternatives[*].chef_id
+    - specific/available.chef.chef_id
+    - still-valid current_state.candidate_chefs[*].chef_id
+    - still-valid current_state.booking_state.chef_id
+
+    Returns empty set if no tool result provenance exists at all.
+    """
+    verified: set[str] = set()
+    has_tool_result = False
+    history = runtime_input.get("history", [])
+    for msg in history:
+        if isinstance(msg, dict) and msg.get("role") == "tool":
+            has_tool_result = True
+            try:
+                result = json.loads(msg.get("content", "{}"))
+                if result.get("status") == "matched":
+                    for c in result.get("candidates", []):
+                        verified.add(c.get("chef_id"))
+                elif result.get("status") == "unavailable":
+                    for c in result.get("alternatives", []):
+                        verified.add(c.get("chef_id"))
+                elif result.get("status") == "available":
+                    chef = result.get("chef", {})
+                    if isinstance(chef, dict) and "chef_id" in chef:
+                        verified.add(chef["chef_id"])
+            except (json.JSONDecodeError, ValueError):
+                pass
+    current_state = runtime_input.get("current_state", {})
+    for c in current_state.get("candidate_chefs", []):
+        verified.add(c.get("chef_id"))
+    booking = current_state.get("booking_state", {})
+    if booking.get("chef_id"):
+        verified.add(booking["chef_id"])
+    if not has_tool_result and not verified:
+        return set()
+    return verified
+
+
 def _check_booking_authorized(
     decision: FinalDecision,
     runtime_input: dict,
@@ -385,6 +428,17 @@ def _check_booking_authorized(
                 message="booking_authorized requires tool-verified chef_id",
             )
         )
+    else:
+        verified_ids = _build_verified_chef_set(runtime_input)
+        if decision.booking_state.chef_id not in verified_ids:
+            issues.append(
+                ValidationIssue(
+                    path="chef_id",
+                    message=(
+                        "booking_authorized chef_id not in verified chef set"
+                    ),
+                )
+            )
     user_input = runtime_input.get("user_input")
     if user_input is not None and not is_affirmative(user_input):
         issues.append(

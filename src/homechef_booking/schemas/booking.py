@@ -82,8 +82,8 @@ class BookingSlot(BaseModel):
     people: StrictInt | None = None
     address: StrictStr | None = None
     cuisine: StrictStr | None = None
-    budget_min: StrictFloat | None = None
-    budget_max: StrictFloat | None = None
+    budget_min: StrictFloat | StrictInt | None = None
+    budget_max: StrictFloat | StrictInt | None = None
     menu: list[StrictStr] = []
     chef_id: StrictStr | None = None
     chef_name: StrictStr | None = None

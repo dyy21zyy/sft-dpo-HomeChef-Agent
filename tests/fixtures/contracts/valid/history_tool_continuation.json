@@ -51,7 +51,25 @@
       "function": {
         "name": "find_chefs",
         "description": "根据预约约束查询可服务厨师",
-        "parameters": {}
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["chef_name","service_date","start_time","people","address","cuisine","budget_min","budget_max","menu","ingredient_purchase","dietary_constraints","occasion"],
+          "properties": {
+            "chef_name": {"type":["string","null"]},
+            "service_date": {"type":["string","null"]},
+            "start_time": {"type":["string","null"]},
+            "people": {"type":["integer","null"]},
+            "address": {"type":["string","null"]},
+            "cuisine": {"type":["string","null"]},
+            "budget_min": {"type":["number","null"]},
+            "budget_max": {"type":["number","null"]},
+            "menu": {"type":"array","items":{"type":"string"}},
+            "ingredient_purchase": {"type":["boolean","null"]},
+            "dietary_constraints": {"type":"array","items":{"type":"string"}},
+            "occasion": {"type":["string","null"]}
+          }
+        }
       }
     }
   ]

@@ -556,3 +556,199 @@ def test_history_tool_call_arguments_invalid_date_fails() -> None:
     runtime["history"][0]["tool_calls"][0]["function"]["arguments"] = json.dumps(args)
     issues = validate_runtime_input(runtime)
     assert any("invalid tool_call arguments" in i.message for i in issues)
+
+
+# --- Fix 1: empty alternatives constraints ---
+
+
+def test_not_found_nonempty_alternatives_fails() -> None:
+    with pytest.raises(ValidationError):
+        parse_find_chefs_result({
+            "mode": "specific",
+            "status": "not_found",
+            "requested_chef": "张伟",
+            "alternatives": [{"chef_id": "C005", "chef_name": "王芳"}],
+        })
+
+
+def test_out_of_service_area_nonempty_alternatives_fails() -> None:
+    with pytest.raises(ValidationError):
+        parse_find_chefs_result({
+            "mode": "specific",
+            "status": "out_of_service_area",
+            "requested_chef": "张伟",
+            "alternatives": [{"chef_id": "C005", "chef_name": "王芳"}],
+        })
+
+
+# --- Fix 2: full available_tools contract ---
+
+
+def test_available_tools_empty_parameters_fails() -> None:
+    runtime = load(VALID / "minimal_runtime_input.json")
+    runtime["available_tools"][0]["function"]["parameters"] = {}
+    issues = validate_runtime_input(runtime)
+    assert any("parameters" in i.message for i in issues)
+
+
+def test_available_tools_missing_required_key_fails() -> None:
+    runtime = load(VALID / "minimal_runtime_input.json")
+    params = runtime["available_tools"][0]["function"]["parameters"]
+    params["required"] = ["chef_name"]
+    issues = validate_runtime_input(runtime)
+    assert any("required" in i.message for i in issues)
+
+
+def test_available_tools_extra_property_key_fails() -> None:
+    runtime = load(VALID / "minimal_runtime_input.json")
+    params = runtime["available_tools"][0]["function"]["parameters"]
+    params["properties"]["city"] = {"type": "string"}
+    issues = validate_runtime_input(runtime)
+    assert any("properties" in i.message for i in issues)
+
+
+def test_available_tools_wrong_function_name_fails() -> None:
+    runtime = load(VALID / "minimal_runtime_input.json")
+    runtime["available_tools"][0]["function"]["name"] = "wrong_tool"
+    issues = validate_runtime_input(runtime)
+    assert any("name" in i.path for i in issues)
+
+
+# --- Fix 3: specific/available chef provenance ---
+
+
+def test_specific_available_chef_c003_decision_c003_passes() -> None:
+    runtime = load(VALID / "history_tool_continuation.json")
+    runtime["current_state"]["awaiting_confirmation"] = True
+    runtime["current_state"]["booking_state"]["chef_id"] = "C003"
+    runtime["current_state"]["booking_state"]["chef_name"] = "张伟"
+    runtime["current_state"]["chef_query_status"] = "available"
+    runtime["current_state"]["candidate_chefs"] = []
+    runtime["user_input"] = "确认"
+    decision = {
+        "action": "final",
+        "booking_state": {
+            "service_date": "2026-08-15",
+            "start_time": "18:00",
+            "people": 6,
+            "address": "杨浦",
+            "cuisine": "川菜",
+            "budget_min": 800.0,
+            "budget_max": 1200.0,
+            "menu": [],
+            "chef_id": "C003",
+            "chef_name": "张伟",
+            "ingredient_purchase": None,
+            "dietary_constraints": [],
+            "occasion": "家庭聚餐",
+            "confirmation": True,
+        },
+        "chef_query_status": "available",
+        "candidate_chefs": [],
+        "info_complete": True,
+        "unrelated": False,
+        "missing_info": [],
+        "reply_type": "booking_authorized",
+        "reply": "好的，已为您预约张伟厨师。",
+    }
+    issues = validate_decision(decision, runtime)
+    assert issues == []
+
+
+def test_specific_available_chef_c003_decision_c999_fails() -> None:
+    runtime = load(VALID / "history_tool_continuation.json")
+    runtime["current_state"]["awaiting_confirmation"] = True
+    runtime["current_state"]["booking_state"]["chef_id"] = "C003"
+    runtime["current_state"]["booking_state"]["chef_name"] = "张伟"
+    runtime["current_state"]["chef_query_status"] = "available"
+    runtime["user_input"] = "确认"
+    decision = {
+        "action": "final",
+        "booking_state": {
+            "service_date": "2026-08-15",
+            "start_time": "18:00",
+            "people": 6,
+            "address": "杨浦",
+            "cuisine": "川菜",
+            "budget_min": 800.0,
+            "budget_max": 1200.0,
+            "menu": [],
+            "chef_id": "C999",
+            "chef_name": "虚构厨师",
+            "ingredient_purchase": None,
+            "dietary_constraints": [],
+            "occasion": "家庭聚餐",
+            "confirmation": True,
+        },
+        "chef_query_status": "available",
+        "candidate_chefs": [],
+        "info_complete": True,
+        "unrelated": False,
+        "missing_info": [],
+        "reply_type": "booking_authorized",
+        "reply": "ok",
+    }
+    issues = validate_decision(decision, runtime)
+    assert any("verified chef" in i.message for i in issues)
+
+
+def test_no_provenance_arbitrary_chef_id_fails() -> None:
+    runtime = load(VALID / "minimal_runtime_input.json")
+    runtime["current_state"]["awaiting_confirmation"] = True
+    runtime["user_input"] = "确认"
+    decision = {
+        "action": "final",
+        "booking_state": {
+            "service_date": "2026-08-15",
+            "start_time": "18:00",
+            "people": 6,
+            "address": "杨浦",
+            "cuisine": "川菜",
+            "budget_min": 800.0,
+            "budget_max": 1200.0,
+            "menu": [],
+            "chef_id": "C999",
+            "chef_name": "虚构厨师",
+            "ingredient_purchase": None,
+            "dietary_constraints": [],
+            "occasion": "家庭聚餐",
+            "confirmation": True,
+        },
+        "chef_query_status": "not_checked",
+        "candidate_chefs": [],
+        "info_complete": True,
+        "unrelated": False,
+        "missing_info": [],
+        "reply_type": "booking_authorized",
+        "reply": "ok",
+    }
+    issues = validate_decision(decision, runtime)
+    assert any("verified chef" in i.message for i in issues)
+
+
+# --- Fix 4: budget JSON number semantics ---
+
+
+def test_budget_accepts_int_and_float() -> None:
+    BookingSlot(budget_min=800, budget_max=1200.0)
+    FindChefsInput.model_validate({
+        "chef_name": None,
+        "service_date": "2026-08-15",
+        "start_time": "18:00",
+        "people": 6,
+        "address": "杨浦",
+        "cuisine": "川菜",
+        "budget_min": 800,
+        "budget_max": 1200.0,
+        "menu": [],
+        "ingredient_purchase": None,
+        "dietary_constraints": [],
+        "occasion": "家庭聚餐",
+    })
+
+
+def test_budget_rejects_string_and_bool() -> None:
+    with pytest.raises(ValidationError):
+        BookingSlot(budget_min="800")
+    with pytest.raises(ValidationError):
+        BookingSlot(budget_max=True)

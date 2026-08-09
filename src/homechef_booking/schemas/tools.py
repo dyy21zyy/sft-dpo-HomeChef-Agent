@@ -46,8 +46,8 @@ class FindChefsInput(BaseModel):
     people: StrictInt | None = None
     address: StrictStr | None = None
     cuisine: StrictStr | None = None
-    budget_min: StrictFloat | None = None
-    budget_max: StrictFloat | None = None
+    budget_min: StrictFloat | StrictInt | None = None
+    budget_max: StrictFloat | StrictInt | None = None
     menu: list[StrictStr] = []
     ingredient_purchase: StrictBool | None = None
     dietary_constraints: list[StrictStr] = []
@@ -139,7 +139,7 @@ class SpecificNotFoundResult(BaseModel):
     mode: Literal["specific"]
     status: Literal["not_found"]
     requested_chef: StrictStr
-    alternatives: list[CandidateChef]
+    alternatives: list[CandidateChef] = Field(max_length=0)
 
 
 class SpecificOutOfServiceAreaResult(BaseModel):
@@ -147,7 +147,7 @@ class SpecificOutOfServiceAreaResult(BaseModel):
     mode: Literal["specific"]
     status: Literal["out_of_service_area"]
     requested_chef: StrictStr
-    alternatives: list[CandidateChef]
+    alternatives: list[CandidateChef] = Field(max_length=0)
 
 
 class SpecificErrorResult(BaseModel):
