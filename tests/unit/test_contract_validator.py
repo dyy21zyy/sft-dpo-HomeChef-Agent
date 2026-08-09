@@ -37,4 +37,7 @@ def test_markdown_fenced_model_json_is_rejected() -> None:
 def test_candidate_order_mutation_is_rejected() -> None:
     runtime_input = load_fixture(VALID / "history_tool_continuation.json")
     decision = load_fixture(INVALID / "final_reordered_candidates.json")
-    assert "candidate order" in "\n".join(i.message for i in validate_decision(decision, runtime_input))
+    assert (
+        "candidate order"
+        in "\n".join(i.message for i in validate_decision(decision, runtime_input))
+    )

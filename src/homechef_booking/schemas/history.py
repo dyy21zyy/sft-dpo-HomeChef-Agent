@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -56,7 +56,9 @@ class ToolMessage(BaseModel):
     content: str
 
 
-HistoryMessage = Union[UserMessage, AssistantTextMessage, AssistantToolCallMessage, ToolMessage]
+HistoryMessage = (
+    UserMessage | AssistantTextMessage | AssistantToolCallMessage | ToolMessage
+)
 
 
 def _parse_history_message(msg: dict) -> BaseModel:

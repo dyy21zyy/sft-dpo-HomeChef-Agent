@@ -16,7 +16,10 @@ from homechef_booking.schemas.booking import (
     missing_required_slots,
 )
 from homechef_booking.schemas.decision import FinalDecision, parse_decision_obj
-from homechef_booking.schemas.history import parse_history_messages, validate_history_sequence
+from homechef_booking.schemas.history import (
+    parse_history_messages,
+    validate_history_sequence,
+)
 from homechef_booking.schemas.runtime import BookingRuntimeInput
 from homechef_booking.schemas.tools import parse_find_chefs_result
 
@@ -44,8 +47,12 @@ def validate_runtime_input(value: dict[str, Any]) -> list[ValidationIssue]:
         BookingRuntimeInput.model_validate(value)
     except ValidationError as exc:
         for err in exc.errors():
-            issues.append(ValidationIssue(path=".".join(str(x) for x in err["loc"]), message=err["msg"]))
-    # Validate history sequence
+            issues.append(
+                ValidationIssue(
+                    path=".".join(str(x) for x in err["loc"]),
+                    message=err["msg"],
+                )
+            )
     if isinstance(value.get("history"), list):
         try:
             messages = parse_history_messages(value["history"])
@@ -58,32 +65,57 @@ def validate_runtime_input(value: dict[str, Any]) -> list[ValidationIssue]:
     return issues
 
 
-def validate_decision(value: dict[str, Any], runtime_input: dict[str, Any] | None = None) -> list[ValidationIssue]:
+def validate_decision(
+    value: dict[str, Any],
+    runtime_input: dict[str, Any] | None = None,
+) -> list[ValidationIssue]:
     """Validate a decision dict against contract rules."""
     issues: list[ValidationIssue] = []
     try:
         decision = parse_decision_obj(value)
     except ValidationError as exc:
         for err in exc.errors():
-            issues.append(ValidationIssue(path=".".join(str(x) for x in err["loc"]), message=err["msg"]))
+            issues.append(
+                ValidationIssue(
+                    path=".".join(str(x) for x in err["loc"]),
+                    message=err["msg"],
+                )
+            )
         return issues
 
     if isinstance(decision, FinalDecision):
-        # Check info_complete matches required slot completeness
         slot = decision.booking_state
         actual_missing = missing_required_slots(slot)
         if decision.info_complete != (len(actual_missing) == 0):
-            issues.append(ValidationIssue(path="info_complete", message="info_complete does not match required slot completeness"))
+            issues.append(
+                ValidationIssue(
+                    path="info_complete",
+                    message="info_complete does not match required slot completeness",
+                )
+            )
         if decision.missing_info != actual_missing:
-            issues.append(ValidationIssue(path="missing_info", message="missing_info does not match canonical required slot order"))
+            issues.append(
+                ValidationIssue(
+                    path="missing_info",
+                    message="missing_info does not match canonical required slot order",
+                )
+            )
 
-        # Check unrelated/handoff consistency
         if decision.unrelated and decision.reply_type.value != "handoff":
-            issues.append(ValidationIssue(path="unrelated", message="unrelated=true requires reply_type=handoff"))
+            issues.append(
+                ValidationIssue(
+                    path="unrelated",
+                    message="unrelated=true requires reply_type=handoff",
+                )
+            )
         if decision.reply_type.value == "handoff" and not decision.unrelated:
-            issues.append(ValidationIssue(path="reply_type", message="reply_type=handoff requires unrelated=true"))
+            issues.append(
+                ValidationIssue(
+                    path="reply_type",
+                    message="reply_type=handoff requires unrelated=true",
+                )
+            )
 
-        # Check candidate order from tool facts if runtime available
         if runtime_input:
             _check_candidate_provenance(decision, runtime_input, issues)
             _check_state_invalidation(decision, runtime_input, issues)
@@ -91,7 +123,11 @@ def validate_decision(value: dict[str, Any], runtime_input: dict[str, Any] | Non
     return issues
 
 
-def _check_candidate_provenance(decision: FinalDecision, runtime_input: dict, issues: list[ValidationIssue]) -> None:
+def _check_candidate_provenance(
+    decision: FinalDecision,
+    runtime_input: dict,
+    issues: list[ValidationIssue],
+) -> None:
     """Check candidate order matches tool result order."""
     history = runtime_input.get("history", [])
     tool_candidates: list[dict] = []
@@ -99,9 +135,15 @@ def _check_candidate_provenance(decision: FinalDecision, runtime_input: dict, is
         if isinstance(msg, dict) and msg.get("role") == "tool":
             try:
                 result = json.loads(msg.get("content", "{}"))
-                if result.get("status") == "matched" and isinstance(result.get("candidates"), list):
+                if (
+                    result.get("status") == "matched"
+                    and isinstance(result.get("candidates"), list)
+                ):
                     tool_candidates = result["candidates"]
-                elif result.get("status") == "unavailable" and isinstance(result.get("alternatives"), list):
+                elif (
+                    result.get("status") == "unavailable"
+                    and isinstance(result.get("alternatives"), list)
+                ):
                     tool_candidates = result["alternatives"]
             except (json.JSONDecodeError, ValueError):
                 pass
@@ -109,10 +151,19 @@ def _check_candidate_provenance(decision: FinalDecision, runtime_input: dict, is
         tool_ids = [c.get("chef_id") for c in tool_candidates]
         decision_ids = [c.chef_id for c in decision.candidate_chefs]
         if decision_ids != tool_ids and set(decision_ids) <= set(tool_ids):
-            issues.append(ValidationIssue(path="candidate_chefs", message="candidate order mutation detected"))
+            issues.append(
+                ValidationIssue(
+                    path="candidate_chefs",
+                    message="candidate order mutation detected",
+                )
+            )
 
 
-def _check_state_invalidation(decision: FinalDecision, runtime_input: dict, issues: list[ValidationIssue]) -> None:
+def _check_state_invalidation(
+    decision: FinalDecision,
+    runtime_input: dict,
+    issues: list[ValidationIssue],
+) -> None:
     """Check query dependency mutation invalidates stale tool facts."""
     current_state = runtime_input.get("current_state", {})
     current_booking = current_state.get("booking_state", {})
@@ -121,9 +172,19 @@ def _check_state_invalidation(decision: FinalDecision, runtime_input: dict, issu
         if field in current_booking and field in new_booking:
             if current_booking[field] != new_booking[field]:
                 if decision.candidate_chefs:
-                    issues.append(ValidationIssue(path="candidate_chefs", message="query dependency mutation requires candidate_chefs=[]"))
+                    issues.append(
+                        ValidationIssue(
+                            path="candidate_chefs",
+                            message="query dependency mutation requires candidate_chefs=[]",
+                        )
+                    )
                 if decision.booking_state.chef_id is not None:
-                    issues.append(ValidationIssue(path="chef_id", message="query dependency mutation requires chef_id=null"))
+                    issues.append(
+                        ValidationIssue(
+                            path="chef_id",
+                            message="query dependency mutation requires chef_id=null",
+                        )
+                    )
                 break
 
 
@@ -162,7 +223,10 @@ def json_schema_verdict(path: Path, value: dict[str, Any]) -> bool:
     ref_schema = {"$ref": f"#/$defs/{schema_key}", "$defs": combined}
     try:
         validator_cls = jsonschema.Draft202012Validator
-        validator = validator_cls(ref_schema, format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER)
+        validator = validator_cls(
+            ref_schema,
+            format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER,
+        )
         validator.validate(value)
         return True
     except jsonschema.ValidationError:
@@ -191,21 +255,34 @@ def validate_contract_files(root: Path) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     fixtures_dir = root / "tests" / "fixtures" / "contracts"
     if not fixtures_dir.exists():
-        issues.append(ValidationIssue(path="fixtures", message="fixtures directory not found"))
+        issues.append(
+            ValidationIssue(path="fixtures", message="fixtures directory not found")
+        )
         return issues
     for fixture_path in sorted(fixtures_dir.glob("*/*.json")):
         try:
             json.loads(fixture_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            issues.append(ValidationIssue(path=str(fixture_path), message=f"JSON parse error: {exc}"))
+            issues.append(
+                ValidationIssue(
+                    path=str(fixture_path),
+                    message=f"JSON parse error: {exc}",
+                )
+            )
     return issues
 
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point for contract validation."""
-    parser = argparse.ArgumentParser(description="HomeChef booking contract validator")
+    parser = argparse.ArgumentParser(
+        description="HomeChef booking contract validator",
+    )
     parser.add_argument("--root", default=".", help="Project root directory")
-    parser.add_argument("--fixtures", default="tests/fixtures/contracts", help="Fixtures directory")
+    parser.add_argument(
+        "--fixtures",
+        default="tests/fixtures/contracts",
+        help="Fixtures directory",
+    )
     args = parser.parse_args(argv)
 
     root = Path(args.root)

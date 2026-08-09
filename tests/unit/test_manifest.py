@@ -21,6 +21,6 @@ def test_manifest_hashes_match_source_documents() -> None:
 
 
 def test_normalized_hash_treats_crlf_and_lf_as_equal() -> None:
-    assert normalized_utf8_lf_sha256("a\r\nb\r\n".encode("utf-8")) == (
-        normalized_utf8_lf_sha256("a\nb\n".encode("utf-8"))
+    assert normalized_utf8_lf_sha256(b"a\r\nb\r\n") == (
+        normalized_utf8_lf_sha256(b"a\nb\n")
     )

@@ -6,7 +6,13 @@ from pydantic import ValidationError
 
 from homechef_booking.schemas.tools import FindChefsInput, parse_find_chefs_result
 
-FIXTURES = Path(__file__).resolve().parent.parent.parent / "tests" / "fixtures" / "contracts" / "valid"
+FIXTURES = (
+    Path(__file__).resolve().parent.parent.parent
+    / "tests"
+    / "fixtures"
+    / "contracts"
+    / "valid"
+)
 
 
 def load_tool_result_fixture(mode: str, status: str) -> dict:

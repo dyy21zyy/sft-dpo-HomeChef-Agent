@@ -122,7 +122,17 @@ class SpecificErrorResult(BaseModel):
 
 
 FindChefsResult = Annotated[
-    SearchMatchedResult | SearchNoMatchResult | SearchOutOfServiceAreaResult | SearchErrorResult | SpecificAvailableResult | SpecificUnavailableResult | SpecificNotFoundResult | SpecificOutOfServiceAreaResult | SpecificErrorResult,
+    (
+        SearchMatchedResult
+        | SearchNoMatchResult
+        | SearchOutOfServiceAreaResult
+        | SearchErrorResult
+        | SpecificAvailableResult
+        | SpecificUnavailableResult
+        | SpecificNotFoundResult
+        | SpecificOutOfServiceAreaResult
+        | SpecificErrorResult
+    ),
     Field(discriminator="mode"),
 ]
 
