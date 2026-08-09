@@ -500,36 +500,93 @@ candidate_chefs
 
 > **需要新的外部业务事实 → Tool Call；已有足够事实、只需向用户展示/追问/确认 → Final。**
 
-## 4.4 条件搜索
+## 4.4 条件搜索 (search mode)
 
-`chef_name == null`。
+`chef_name == null`。合法状态及完全确定的字段集：
 
-合法状态：
+### search/matched
 
-```text
-matched
-no_match
-out_of_service_area
-error
+```json
+{"mode":"search","status":"matched","candidates":[{"chef_id":"C003","chef_name":"张伟"}]}
 ```
 
-`matched` 返回 `candidates[]`，模型必须保持 Tool 返回顺序，不能自行重排。
+candidates required, minItems=1。模型必须保持 Tool 返回顺序，不能自行重排。
 
-## 4.5 指定厨师
+### search/no_match
 
-`chef_name != null`。
-
-合法状态：
-
-```text
-available
-unavailable
-not_found
-out_of_service_area
-error
+```json
+{"mode":"search","status":"no_match","candidates":[]}
 ```
 
-`unavailable` 可以返回 `alternatives[]`，但模型不能自动选 Top-1。
+candidates required, exactly [].
+
+### search/out_of_service_area
+
+```json
+{"mode":"search","status":"out_of_service_area","candidates":[]}
+```
+
+candidates required, exactly [].
+
+### search/error
+
+```json
+{"mode":"search","status":"error","error_code":"SERVICE_ERROR","retryable":false,"message":"查询服务暂时不可用"}
+```
+
+error_code: string (required), retryable: boolean (required), message: string (required)。模型应输出 booking_paused，不得自行 retry。
+
+## 4.5 指定厨师 (specific mode)
+
+`chef_name != null`。合法状态及完全确定的字段集：
+
+### specific/available
+
+```json
+{"mode":"specific","status":"available","chef":{"chef_id":"C003","chef_name":"张伟"}}
+```
+
+chef required, exact CandidateChef。
+
+### specific/unavailable
+
+```json
+{"mode":"specific","status":"unavailable","requested_chef":"张伟","alternatives":[]}
+```
+
+requested_chef: string (required), alternatives: required, may be []。模型不能自动选 Top-1。
+
+### specific/not_found
+
+```json
+{"mode":"specific","status":"not_found","requested_chef":"张伟","alternatives":[]}
+```
+
+requested_chef: string (required), alternatives exactly [].
+
+### specific/out_of_service_area
+
+```json
+{"mode":"specific","status":"out_of_service_area","requested_chef":"张伟","alternatives":[]}
+```
+
+requested_chef: string (required), alternatives exactly [].
+
+### specific/error
+
+```json
+{"mode":"specific","status":"error","error_code":"CHEF_QUERY_ERROR","retryable":false,"message":"查询厨师服务暂时不可用"}
+```
+
+error_code: string (required), retryable: boolean (required), message: string (required)。模型应输出 booking_paused，不得自行 retry。
+
+### CandidateChef v1
+
+```json
+{"chef_id":"C003","chef_name":"张伟"}
+```
+
+additionalProperties=false。
 
 ---
 
@@ -686,6 +743,21 @@ awaiting_confirmation = true
 confirmation = true
 reply_type = booking_authorized
 ```
+
+Deterministic affirmative allowlist (完全一致匹配，不做模糊语义理解):
+
+```text
+确认
+可以
+好的
+就这样
+确认预约
+```
+
+chef_query_status 必须保持最后一次有效 Tool Result status：
+- direct specific/available → available
+- selected from search/matched → matched
+- selected from unavailable alternatives → unavailable
 
 ## 6.5 mutation dominates confirmation
 

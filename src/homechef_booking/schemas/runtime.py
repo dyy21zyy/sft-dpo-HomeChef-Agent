@@ -27,14 +27,14 @@ class ToolFunctionSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Literal["find_chefs"]
-    description: str
+    description: StrictStr
     parameters: dict
 
 
 class ToolSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    type: StrictStr
+    type: Literal["function"]
     function: ToolFunctionSpec
 
 

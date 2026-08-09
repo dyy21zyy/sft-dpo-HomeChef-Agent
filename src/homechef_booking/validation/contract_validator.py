@@ -13,7 +13,6 @@ from pydantic import ValidationError
 
 from homechef_booking.schemas.booking import (
     QUERY_DEPENDENCY_FIELDS,
-    BookingSlot,
     ChefQueryStatus,
     ReplyType,
     is_affirmative,
@@ -180,22 +179,31 @@ def _validate_tool_call_business(
     runtime_input: dict[str, Any] | None,
     issues: list[ValidationIssue],
 ) -> None:
-    """Business rules for ToolCallDecision."""
-    if runtime_input:
-        state = runtime_input.get("current_state", {})
-        booking = state.get("booking_state", {})
-        slot = BookingSlot.model_validate(booking)
-        missing = missing_required_slots(slot)
-        if missing:
-            issues.append(
-                ValidationIssue(
-                    path="tool_call",
-                    message=(
-                        "ToolCall requires all 4 required slots complete, "
-                        f"missing: {missing}"
-                    ),
-                )
+    """Business rules for ToolCallDecision.
+
+    Checks decision.arguments (not current_state.booking_state) for the
+    four required slots: service_date, start_time, people, address.
+    """
+    args = decision.arguments
+    missing: list[str] = []
+    if args.service_date is None:
+        missing.append("service_date")
+    if args.start_time is None:
+        missing.append("start_time")
+    if args.people is None:
+        missing.append("people")
+    if args.address is None:
+        missing.append("address")
+    if missing:
+        issues.append(
+            ValidationIssue(
+                path="tool_call",
+                message=(
+                    "ToolCall requires all 4 required slots complete, "
+                    f"missing: {missing}"
+                ),
             )
+        )
 
 
 def _validate_final_business(
@@ -345,7 +353,19 @@ def _check_booking_authorized(
     runtime_input: dict,
     issues: list[ValidationIssue],
 ) -> None:
-    """Check booking_authorized requires awaiting_confirmation and verified chef."""
+    """Check booking_authorized rules.
+
+    Requires:
+    - awaiting_confirmation=true
+    - selected chef has valid Tool provenance (chef_id non-null)
+    - explicit affirmative user input
+    - no query dependency mutation
+
+    chef_query_status must preserve last effective Tool Result status:
+    - direct specific/available → available
+    - selected from search/matched → matched
+    - selected from unavailable alternatives → unavailable
+    """
     if decision.reply_type != ReplyType.booking_authorized:
         return
     current_state = runtime_input.get("current_state", {})
@@ -363,16 +383,6 @@ def _check_booking_authorized(
             ValidationIssue(
                 path="chef_id",
                 message="booking_authorized requires tool-verified chef_id",
-            )
-        )
-    if decision.chef_query_status != ChefQueryStatus.available:
-        issues.append(
-            ValidationIssue(
-                path="chef_query_status",
-                message=(
-                    "booking_authorized requires "
-                    "chef_query_status=available"
-                ),
             )
         )
     user_input = runtime_input.get("user_input")

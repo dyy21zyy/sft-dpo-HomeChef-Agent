@@ -1,1 +1,1 @@
-{"mode":"specific","status":"error"}
+{"mode":"specific","status":"error","error_code":"CHEF_QUERY_ERROR","retryable":false,"message":"查询厨师服务暂时不可用"}

@@ -1,4 +1,7 @@
-"""Strict Pydantic v2 find_chefs Tool input and result schemas."""
+"""Strict Pydantic v2 find_chefs Tool input and result schemas.
+
+CG-04 CLOSED: exact field sets per mode x status pair.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +9,7 @@ import datetime
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.types import StrictBool, StrictFloat, StrictInt, StrictStr
 
 _START_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -83,77 +86,81 @@ class FindChefsInput(BaseModel):
         return v
 
 
+# --- find_chefs Tool Result variants (CG-04 CLOSED) ---
+
+
 class SearchMatchedResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: Literal["search"]
     status: Literal["matched"]
-    candidates: list[CandidateChef]
+    candidates: list[CandidateChef] = Field(min_length=1)
 
 
 class SearchNoMatchResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: Literal["search"]
     status: Literal["no_match"]
+    candidates: list[CandidateChef] = Field(max_length=0)
 
 
 class SearchOutOfServiceAreaResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: Literal["search"]
     status: Literal["out_of_service_area"]
+    candidates: list[CandidateChef] = Field(max_length=0)
 
 
 class SearchErrorResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: Literal["search"]
     status: Literal["error"]
+    error_code: StrictStr
+    retryable: StrictBool
+    message: StrictStr
 
 
 class SpecificAvailableResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: Literal["specific"]
     status: Literal["available"]
+    chef: CandidateChef
 
 
 class SpecificUnavailableResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: Literal["specific"]
     status: Literal["unavailable"]
+    requested_chef: StrictStr
     alternatives: list[CandidateChef]
 
 
 class SpecificNotFoundResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: Literal["specific"]
     status: Literal["not_found"]
+    requested_chef: StrictStr
+    alternatives: list[CandidateChef]
 
 
 class SpecificOutOfServiceAreaResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: Literal["specific"]
     status: Literal["out_of_service_area"]
+    requested_chef: StrictStr
+    alternatives: list[CandidateChef]
 
 
 class SpecificErrorResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: Literal["specific"]
     status: Literal["error"]
+    error_code: StrictStr
+    retryable: StrictBool
+    message: StrictStr
 
 
 def parse_find_chefs_result(obj: dict) -> BaseModel:
-    """Parse a raw dict into the correct FindChefsResult variant.
-
-    Uses (mode, status) pair to select the exact model, since status alone
-    is ambiguous between search and specific modes.
-    """
+    """Parse a raw dict into the correct FindChefsResult variant."""
     mode = obj.get("mode")
     status = obj.get("status")
     if mode == "search":
@@ -176,7 +183,9 @@ def parse_find_chefs_result(obj: dict) -> BaseModel:
             return SpecificOutOfServiceAreaResult.model_validate(obj)
         if status == "error":
             return SpecificErrorResult.model_validate(obj)
-    raise ValueError(f"Invalid find_chefs result: mode={mode}, status={status}")
+    raise ValueError(
+        f"Invalid find_chefs result: mode={mode}, status={status}"
+    )
 
 
 __all__ = [

@@ -5,9 +5,9 @@ effective_date: 2026-08-08
 hash_mode: normalized_utf8_lf
 source_documents:
   BOOKING_MACHINE_CONTRACT_v1.md:
-    sha256: 8c23d81de75bae6e0f6b1770904b25f7986f6b98950da27ea79d072bac3a039e
+    sha256: bd2ce31d54fcd424d8a5682c3f0335bf9587b01909d649954e528fb8965bb322
   finetune-spec.md:
-    sha256: 582fd3cc747de275eb6fcaae396206866131de4cc3a55023abc1a0e3d8009e44
+    sha256: 0b18a6e69cd59ba8f7349c1680af6bf9e9c15c8daadc4c8d90b1e5a6b0715b0b
 schemas:
   - contracts/booking_machine_contract_v1.schema.json
   - contracts/find_chefs_v1.schema.json

@@ -12,9 +12,11 @@ from homechef_booking.schemas.booking import (
     missing_required_slots,
 )
 from homechef_booking.schemas.decision import (
+    FinalDecision,
     ToolCallDecision,
+    parse_decision_obj,
 )
-from homechef_booking.schemas.tools import FindChefsInput
+from homechef_booking.schemas.tools import FindChefsInput, parse_find_chefs_result
 from homechef_booking.validation.contract_validator import (
     validate_decision,
     validate_runtime_input,
@@ -105,8 +107,8 @@ def test_tool_call_arguments_wrong_type_fails() -> None:
 
 def test_tool_call_only_when_required_slots_complete() -> None:
     runtime = load(VALID / "minimal_runtime_input.json")
-    runtime["current_state"]["booking_state"]["service_date"] = None
     decision = load(VALID / "tool_call_decision.json")
+    decision["arguments"]["service_date"] = None
     issues = validate_decision(decision, runtime)
     assert any("required slots" in i.message for i in issues)
 
@@ -176,8 +178,10 @@ def test_booking_authorized_requires_awaiting_confirmation() -> None:
             "occasion": "家庭聚餐",
             "confirmation": True,
         },
-        "chef_query_status": "available",
-        "candidate_chefs": [],
+        "chef_query_status": "matched",
+        "candidate_chefs": [
+            {"chef_id": "C003", "chef_name": "张伟"},
+        ],
         "info_complete": True,
         "unrelated": False,
         "missing_info": [],
@@ -219,6 +223,207 @@ def test_booking_authorized_requires_verified_chef() -> None:
     }
     issues = validate_decision(decision, runtime)
     assert any("chef_id" in i.path or "verified" in i.message for i in issues)
+
+
+# --- Fix 3: booking_authorized with status=matched / status=unavailable ---
+
+
+def test_booking_authorized_matched_candidate_status_matched() -> None:
+    """Matched candidate → confirmation → booking_authorized with status=matched PASS."""
+    runtime = load(VALID / "history_tool_continuation.json")
+    runtime["current_state"]["awaiting_confirmation"] = True
+    runtime["current_state"]["booking_state"]["chef_id"] = "C003"
+    runtime["current_state"]["booking_state"]["chef_name"] = "张伟"
+    runtime["user_input"] = "确认"
+    decision = {
+        "action": "final",
+        "booking_state": {
+            "service_date": "2026-08-15",
+            "start_time": "18:00",
+            "people": 6,
+            "address": "杨浦",
+            "cuisine": "川菜",
+            "budget_min": 800.0,
+            "budget_max": 1200.0,
+            "menu": [],
+            "chef_id": "C003",
+            "chef_name": "张伟",
+            "ingredient_purchase": None,
+            "dietary_constraints": [],
+            "occasion": "家庭聚餐",
+            "confirmation": True,
+        },
+        "chef_query_status": "matched",
+        "candidate_chefs": [
+            {"chef_id": "C003", "chef_name": "张伟"},
+            {"chef_id": "C007", "chef_name": "李明"},
+        ],
+        "info_complete": True,
+        "unrelated": False,
+        "missing_info": [],
+        "reply_type": "booking_authorized",
+        "reply": "好的，已为您预约张伟厨师。",
+    }
+    issues = validate_decision(decision, runtime)
+    assert issues == []
+
+
+def test_booking_authorized_unavailable_alternative_status_unavailable() -> None:
+    """Unavailable alternative → confirmation → booking_authorized with status=unavailable PASS."""
+    runtime = load(VALID / "history_tool_continuation.json")
+    runtime["current_state"]["awaiting_confirmation"] = True
+    runtime["current_state"]["chef_query_status"] = "unavailable"
+    runtime["current_state"]["candidate_chefs"] = [
+        {"chef_id": "C005", "chef_name": "王芳"},
+    ]
+    runtime["current_state"]["booking_state"]["chef_id"] = "C005"
+    runtime["current_state"]["booking_state"]["chef_name"] = "王芳"
+    runtime["user_input"] = "确认"
+    decision = {
+        "action": "final",
+        "booking_state": {
+            "service_date": "2026-08-15",
+            "start_time": "18:00",
+            "people": 6,
+            "address": "杨浦",
+            "cuisine": "川菜",
+            "budget_min": 800.0,
+            "budget_max": 1200.0,
+            "menu": [],
+            "chef_id": "C005",
+            "chef_name": "王芳",
+            "ingredient_purchase": None,
+            "dietary_constraints": [],
+            "occasion": "家庭聚餐",
+            "confirmation": True,
+        },
+        "chef_query_status": "unavailable",
+        "candidate_chefs": [
+            {"chef_id": "C005", "chef_name": "王芳"},
+        ],
+        "info_complete": True,
+        "unrelated": False,
+        "missing_info": [],
+        "reply_type": "booking_authorized",
+        "reply": "好的，已为您预约王芳厨师。",
+    }
+    issues = validate_decision(decision, runtime)
+    assert issues == []
+
+
+# --- Fix 5: ToolCall checks decision.arguments, not current_state ---
+
+
+def test_tool_call_checks_arguments_not_current_state() -> None:
+    """current_state missing address, but ToolCall.arguments has address → PASS."""
+    runtime = load(VALID / "minimal_runtime_input.json")
+    runtime["current_state"]["booking_state"]["address"] = None
+    decision = load(VALID / "tool_call_decision.json")
+    issues = validate_decision(decision, runtime)
+    assert not any("required slots" in i.message for i in issues)
+
+
+# --- Fix 7: info_complete=1 (non-boolean) → FAIL ---
+
+
+def test_info_complete_non_bool_fails() -> None:
+    with pytest.raises(ValidationError):
+        FinalDecision.model_validate({
+            "action": "final",
+            "booking_state": {
+                "service_date": None,
+                "start_time": None,
+                "people": None,
+                "address": None,
+                "cuisine": None,
+                "budget_min": None,
+                "budget_max": None,
+                "menu": [],
+                "chef_id": None,
+                "chef_name": None,
+                "ingredient_purchase": None,
+                "dietary_constraints": [],
+                "occasion": None,
+                "confirmation": None,
+            },
+            "chef_query_status": "not_checked",
+            "candidate_chefs": [],
+            "info_complete": 1,
+            "unrelated": False,
+            "missing_info": ["service_date"],
+            "reply_type": "ask_service_date",
+            "reply": "ok",
+        })
+
+
+# --- Fix 7: invalid action → clean FAIL, no crash ---
+
+
+def test_invalid_action_clean_failure() -> None:
+    with pytest.raises(ValidationError):
+        parse_decision_obj({"action": "invalid_action"})
+
+
+# --- CG-04 new tests ---
+
+
+def test_matched_empty_candidates_fails() -> None:
+    with pytest.raises(ValidationError):
+        parse_find_chefs_result({"mode": "search", "status": "matched", "candidates": []})
+
+
+def test_no_match_missing_candidates_fails() -> None:
+    with pytest.raises(ValidationError):
+        parse_find_chefs_result({"mode": "search", "status": "no_match"})
+
+
+def test_no_match_nonempty_candidates_fails() -> None:
+    with pytest.raises(ValidationError):
+        parse_find_chefs_result({
+            "mode": "search",
+            "status": "no_match",
+            "candidates": [{"chef_id": "C003", "chef_name": "张伟"}],
+        })
+
+
+def test_specific_available_missing_chef_fails() -> None:
+    with pytest.raises(ValidationError):
+        parse_find_chefs_result({"mode": "specific", "status": "available"})
+
+
+def test_specific_unavailable_missing_alternatives_fails() -> None:
+    with pytest.raises(ValidationError):
+        parse_find_chefs_result({
+            "mode": "specific",
+            "status": "unavailable",
+            "requested_chef": "张伟",
+        })
+
+
+def test_specific_unavailable_empty_alternatives_passes() -> None:
+    result = parse_find_chefs_result({
+        "mode": "specific",
+        "status": "unavailable",
+        "requested_chef": "张伟",
+        "alternatives": [],
+    })
+    assert result.status == "unavailable"
+
+
+def test_error_missing_required_fields_fails() -> None:
+    with pytest.raises(ValidationError):
+        parse_find_chefs_result({"mode": "search", "status": "error"})
+
+
+def test_candidate_chef_extra_field_fails() -> None:
+    with pytest.raises(ValidationError):
+        parse_find_chefs_result({
+            "mode": "search",
+            "status": "matched",
+            "candidates": [
+                {"chef_id": "C003", "chef_name": "张伟", "extra": "forbidden"},
+            ],
+        })
 
 
 def test_deterministic_affirmative_allowlist() -> None:

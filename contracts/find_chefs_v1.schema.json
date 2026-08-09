@@ -1,133 +1,126 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "find_chefs_v1.schema.json",
-  "title": "HomeChef find_chefs Tool Schema v1",
+  "title": "HomeChef find_chefs Tool Schema v1 (CG-04 CLOSED)",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "FindChefsInput": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "chef_name", "service_date", "start_time", "people", "address",
-        "cuisine", "budget_min", "budget_max", "menu", "ingredient_purchase",
-        "dietary_constraints", "occasion"
-      ],
+      "required": ["chef_name","service_date","start_time","people","address","cuisine","budget_min","budget_max","menu","ingredient_purchase","dietary_constraints","occasion"],
       "properties": {
-        "chef_name": { "type": ["string", "null"] },
-        "service_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "format": "date" },
-        "start_time": { "type": ["string", "null"], "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
-        "people": { "type": ["integer", "null"] },
-        "address": { "type": ["string", "null"] },
-        "cuisine": { "type": ["string", "null"] },
-        "budget_min": { "type": ["number", "null"] },
-        "budget_max": { "type": ["number", "null"] },
-        "menu": { "type": "array", "items": { "type": "string" } },
-        "ingredient_purchase": { "type": ["boolean", "null"] },
-        "dietary_constraints": { "type": "array", "items": { "type": "string" } },
-        "occasion": { "type": ["string", "null"] }
+        "chef_name": {"type": ["string","null"]},
+        "service_date": {"type": ["string","null"],"pattern": "^\\d{4}-\\d{2}-\\d{2}$","format": "date"},
+        "start_time": {"type": ["string","null"],"pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"},
+        "people": {"type": ["integer","null"]},
+        "address": {"type": ["string","null"]},
+        "cuisine": {"type": ["string","null"]},
+        "budget_min": {"type": ["number","null"]},
+        "budget_max": {"type": ["number","null"]},
+        "menu": {"type": "array","items": {"type": "string"}},
+        "ingredient_purchase": {"type": ["boolean","null"]},
+        "dietary_constraints": {"type": "array","items": {"type": "string"}},
+        "occasion": {"type": ["string","null"]}
       }
     },
     "CandidateChef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["chef_id", "chef_name"],
+      "required": ["chef_id","chef_name"],
       "properties": {
-        "chef_id": { "type": "string" },
-        "chef_name": { "type": "string" }
+        "chef_id": {"type": "string"},
+        "chef_name": {"type": "string"}
       }
     },
     "FindChefsResult": {
       "oneOf": [
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "status", "candidates"],
+          "type": "object","additionalProperties": false,
+          "required": ["mode","status","candidates"],
           "properties": {
-            "mode": { "const": "search" },
-            "status": { "const": "matched" },
-            "candidates": {
-              "type": "array",
-              "minItems": 1,
-              "items": { "$ref": "#/$defs/CandidateChef" }
-            }
+            "mode": {"const": "search"},
+            "status": {"const": "matched"},
+            "candidates": {"type": "array","minItems": 1,"items": {"$ref": "#/$defs/CandidateChef"}}
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "status"],
+          "type": "object","additionalProperties": false,
+          "required": ["mode","status","candidates"],
           "properties": {
-            "mode": { "const": "search" },
-            "status": { "const": "no_match" }
+            "mode": {"const": "search"},
+            "status": {"const": "no_match"},
+            "candidates": {"type": "array","maxItems": 0}
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "status"],
+          "type": "object","additionalProperties": false,
+          "required": ["mode","status","candidates"],
           "properties": {
-            "mode": { "const": "search" },
-            "status": { "const": "out_of_service_area" }
+            "mode": {"const": "search"},
+            "status": {"const": "out_of_service_area"},
+            "candidates": {"type": "array","maxItems": 0}
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "status"],
+          "type": "object","additionalProperties": false,
+          "required": ["mode","status","error_code","retryable","message"],
           "properties": {
-            "mode": { "const": "search" },
-            "status": { "const": "error" }
+            "mode": {"const": "search"},
+            "status": {"const": "error"},
+            "error_code": {"type": "string"},
+            "retryable": {"type": "boolean"},
+            "message": {"type": "string"}
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "status"],
+          "type": "object","additionalProperties": false,
+          "required": ["mode","status","chef"],
           "properties": {
-            "mode": { "const": "specific" },
-            "status": { "const": "available" }
+            "mode": {"const": "specific"},
+            "status": {"const": "available"},
+            "chef": {"$ref": "#/$defs/CandidateChef"}
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "status", "alternatives"],
+          "type": "object","additionalProperties": false,
+          "required": ["mode","status","requested_chef","alternatives"],
           "properties": {
-            "mode": { "const": "specific" },
-            "status": { "const": "unavailable" },
-            "alternatives": {
-              "type": "array",
-              "minItems": 0,
-              "items": { "$ref": "#/$defs/CandidateChef" }
-            }
+            "mode": {"const": "specific"},
+            "status": {"const": "unavailable"},
+            "requested_chef": {"type": "string"},
+            "alternatives": {"type": "array","items": {"$ref": "#/$defs/CandidateChef"}}
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "status"],
+          "type": "object","additionalProperties": false,
+          "required": ["mode","status","requested_chef","alternatives"],
           "properties": {
-            "mode": { "const": "specific" },
-            "status": { "const": "not_found" }
+            "mode": {"const": "specific"},
+            "status": {"const": "not_found"},
+            "requested_chef": {"type": "string"},
+            "alternatives": {"type": "array","maxItems": 0}
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "status"],
+          "type": "object","additionalProperties": false,
+          "required": ["mode","status","requested_chef","alternatives"],
           "properties": {
-            "mode": { "const": "specific" },
-            "status": { "const": "out_of_service_area" }
+            "mode": {"const": "specific"},
+            "status": {"const": "out_of_service_area"},
+            "requested_chef": {"type": "string"},
+            "alternatives": {"type": "array","maxItems": 0}
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["mode", "status"],
+          "type": "object","additionalProperties": false,
+          "required": ["mode","status","error_code","retryable","message"],
           "properties": {
-            "mode": { "const": "specific" },
-            "status": { "const": "error" }
+            "mode": {"const": "specific"},
+            "status": {"const": "error"},
+            "error_code": {"type": "string"},
+            "retryable": {"type": "boolean"},
+            "message": {"type": "string"}
           }
         }
       ]
@@ -137,10 +130,10 @@
     "CandidateChef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["chef_id", "chef_name"],
+      "required": ["chef_id","chef_name"],
       "properties": {
-        "chef_id": { "type": "string" },
-        "chef_name": { "type": "string" }
+        "chef_id": {"type": "string"},
+        "chef_name": {"type": "string"}
       }
     }
   }

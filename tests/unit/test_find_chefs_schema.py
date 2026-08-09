@@ -85,6 +85,7 @@ def test_unavailable_alternatives_preserve_order() -> None:
     result = parse_find_chefs_result({
         "mode": "specific",
         "status": "unavailable",
+        "requested_chef": "张伟",
         "alternatives": [
             {"chef_id": "C005", "chef_name": "王芳"},
             {"chef_id": "C009", "chef_name": "赵强"},

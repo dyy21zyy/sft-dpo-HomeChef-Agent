@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic.types import StrictBool, StrictStr
 
 from homechef_booking.schemas.booking import (
     BookingSlot,
@@ -30,25 +31,36 @@ class FinalDecision(BaseModel):
     booking_state: BookingSlot
     chef_query_status: ChefQueryStatus
     candidate_chefs: list[CandidateChef] = []
-    info_complete: bool
-    unrelated: bool
-    missing_info: list[str] = []
+    info_complete: StrictBool
+    unrelated: StrictBool
+    missing_info: list[StrictStr] = []
     reply_type: ReplyType
-    reply: str | None = None
+    reply: StrictStr | None = None
 
 
 def parse_decision_obj(obj: dict) -> ToolCallDecision | FinalDecision:
-    """Parse a raw dict into the discriminated Decision union."""
+    """Parse a raw dict into the discriminated Decision union.
+
+    Returns a predictable validation error for invalid actions
+    without crashing or fabricating internal Pydantic exceptions.
+    """
     action = obj.get("action")
     if action == "tool_call":
         return ToolCallDecision.model_validate(obj)
     if action == "final":
         return FinalDecision.model_validate(obj)
-    from pydantic import ValidationError
-
-    raise ValidationError(
-        f"Invalid action: {action}",
-        model=ToolCallDecision,
+    raise ValidationError.from_exception_data(
+        title="Decision",
+        line_errors=[{
+            "type": "literal_error",
+            "loc": ("action",),
+            "msg": (
+                "Input should be 'tool_call' or 'final'"
+                f", got {repr(action)}"
+            ),
+            "input": action,
+            "ctx": {"expected": "'tool_call' or 'final'"},
+        }],
     )
 
 

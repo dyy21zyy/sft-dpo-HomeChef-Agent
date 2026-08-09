@@ -121,7 +121,91 @@ dietary_constraints
 occasion
 ```
 
-# 8. Tool Fact Boundary
+# 8. find_chefs Tool Result Contract (CG-04 CLOSED)
+
+每个 mode × status 对具有完全确定的字段集：
+
+## search/matched
+
+```json
+{"mode":"search","status":"matched","candidates":[{"chef_id":"C003","chef_name":"张伟"}]}
+```
+
+candidates required, minItems=1
+
+## search/no_match
+
+```json
+{"mode":"search","status":"no_match","candidates":[]}
+```
+
+candidates required, exactly []
+
+## search/out_of_service_area
+
+```json
+{"mode":"search","status":"out_of_service_area","candidates":[]}
+```
+
+candidates required, exactly []
+
+## search/error
+
+```json
+{"mode":"search","status":"error","error_code":"SERVICE_ERROR","retryable":false,"message":"查询服务暂时不可用"}
+```
+
+error_code: string, retryable: boolean, message: string — all required
+
+## specific/available
+
+```json
+{"mode":"specific","status":"available","chef":{"chef_id":"C003","chef_name":"张伟"}}
+```
+
+chef required, exact CandidateChef
+
+## specific/unavailable
+
+```json
+{"mode":"specific","status":"unavailable","requested_chef":"张伟","alternatives":[]}
+```
+
+requested_chef: string (required), alternatives: required, may be []
+
+## specific/not_found
+
+```json
+{"mode":"specific","status":"not_found","requested_chef":"张伟","alternatives":[]}
+```
+
+requested_chef: string (required), alternatives exactly []
+
+## specific/out_of_service_area
+
+```json
+{"mode":"specific","status":"out_of_service_area","requested_chef":"张伟","alternatives":[]}
+```
+
+requested_chef: string (required), alternatives exactly []
+
+## specific/error
+
+```json
+{"mode":"specific","status":"error","error_code":"CHEF_QUERY_ERROR","retryable":false,"message":"查询厨师服务暂时不可用"}
+```
+
+error_code: string, retryable: boolean, message: string — all required
+
+## CandidateChef v1
+
+```json
+{"chef_id":"C003","chef_name":"张伟"}
+```
+
+additionalProperties=false
+
+# 9. Tool Fact Boundary (see section 8 for exact Tool Result contract)
 
 必须由 Tool 提供：
 
