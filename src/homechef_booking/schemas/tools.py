@@ -4,12 +4,27 @@ from __future__ import annotations
 
 import datetime
 import re
-from typing import Annotated, Literal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-from pydantic.types import StrictStr
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic.types import StrictBool, StrictFloat, StrictInt, StrictStr
 
 _START_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+
+_FIND_CHEFS_REQUIRED_KEYS = frozenset({
+    "chef_name",
+    "service_date",
+    "start_time",
+    "people",
+    "address",
+    "cuisine",
+    "budget_min",
+    "budget_max",
+    "menu",
+    "ingredient_purchase",
+    "dietary_constraints",
+    "occasion",
+})
 
 
 class CandidateChef(BaseModel):
@@ -22,22 +37,34 @@ class CandidateChef(BaseModel):
 class FindChefsInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    chef_name: str | None = None
-    service_date: str | None = None
-    start_time: str | None = None
-    people: int | None = None
-    address: str | None = None
-    cuisine: str | None = None
-    budget_min: float | None = None
-    budget_max: float | None = None
-    menu: list[str] = []
-    ingredient_purchase: bool | None = None
-    dietary_constraints: list[str] = []
-    occasion: str | None = None
+    chef_name: StrictStr | None = None
+    service_date: StrictStr | None = None
+    start_time: StrictStr | None = None
+    people: StrictInt | None = None
+    address: StrictStr | None = None
+    cuisine: StrictStr | None = None
+    budget_min: StrictFloat | None = None
+    budget_max: StrictFloat | None = None
+    menu: list[StrictStr] = []
+    ingredient_purchase: StrictBool | None = None
+    dietary_constraints: list[StrictStr] = []
+    occasion: StrictStr | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def require_all_12_keys(cls, data: object) -> object:
+        if isinstance(data, dict):
+            missing = _FIND_CHEFS_REQUIRED_KEYS - set(data.keys())
+            if missing:
+                raise ValueError(
+                    f"FindChefsInput requires all 12 keys, missing: "
+                    f"{sorted(missing)}"
+                )
+        return data
 
     @field_validator("service_date")
     @classmethod
-    def validate_service_date(cls, v: str | None) -> str | None:
+    def validate_service_date(cls, v: StrictStr | None) -> StrictStr | None:
         if v is None:
             return None
         try:
@@ -48,7 +75,7 @@ class FindChefsInput(BaseModel):
 
     @field_validator("start_time")
     @classmethod
-    def validate_start_time(cls, v: str | None) -> str | None:
+    def validate_start_time(cls, v: StrictStr | None) -> StrictStr | None:
         if v is None:
             return None
         if not _START_TIME_RE.match(v):
@@ -121,22 +148,6 @@ class SpecificErrorResult(BaseModel):
     status: Literal["error"]
 
 
-FindChefsResult = Annotated[
-    (
-        SearchMatchedResult
-        | SearchNoMatchResult
-        | SearchOutOfServiceAreaResult
-        | SearchErrorResult
-        | SpecificAvailableResult
-        | SpecificUnavailableResult
-        | SpecificNotFoundResult
-        | SpecificOutOfServiceAreaResult
-        | SpecificErrorResult
-    ),
-    Field(discriminator="mode"),
-]
-
-
 def parse_find_chefs_result(obj: dict) -> BaseModel:
     """Parse a raw dict into the correct FindChefsResult variant.
 
@@ -171,15 +182,14 @@ def parse_find_chefs_result(obj: dict) -> BaseModel:
 __all__ = [
     "CandidateChef",
     "FindChefsInput",
+    "SearchErrorResult",
     "SearchMatchedResult",
     "SearchNoMatchResult",
     "SearchOutOfServiceAreaResult",
-    "SearchErrorResult",
     "SpecificAvailableResult",
-    "SpecificUnavailableResult",
+    "SpecificErrorResult",
     "SpecificNotFoundResult",
     "SpecificOutOfServiceAreaResult",
-    "SpecificErrorResult",
-    "FindChefsResult",
+    "SpecificUnavailableResult",
     "parse_find_chefs_result",
 ]

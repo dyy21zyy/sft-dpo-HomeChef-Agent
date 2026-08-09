@@ -1,16 +1,18 @@
 import json
 from pathlib import Path
 
-from homechef_booking.validation.contract_validator import json_schema_verdict, pydantic_verdict
+from homechef_booking.validation.contract_validator import (
+    json_schema_structural_verdict,
+    pydantic_structural_verdict,
+)
 
 
 def fixture_paths() -> list[Path]:
-    """Return fixture paths for parity check.
+    """Return fixture paths for structural parity check.
 
-    Only cross-field business invariants that JSON Schema cannot express
-    are excluded from structural parity. Date and time validation are
-    included because JSON Schema uses format:date with FormatChecker
-    and pattern matching respectively.
+    Only final_unrelated_not_handoff is excluded because
+    unrelated=true ↔ reply_type=handoff is a cross-field business
+    invariant that structural schemas cannot express.
     """
     excluded = {"final_unrelated_not_handoff"}
     return [
@@ -20,12 +22,13 @@ def fixture_paths() -> list[Path]:
     ]
 
 
-def test_json_schema_and_pydantic_verdicts_match_for_contract_fixtures() -> None:
+def test_json_schema_and_pydantic_structural_verdicts_match() -> None:
     mismatches: list[tuple[str, bool, bool]] = []
     for path in fixture_paths():
         value = json.loads(path.read_text(encoding="utf-8"))
-        schema_ok = json_schema_verdict(path, value)
-        pydantic_ok = pydantic_verdict(path, value)
+        schema_ok = json_schema_structural_verdict(path, value)
+        pydantic_ok = pydantic_structural_verdict(path, value)
         if schema_ok != pydantic_ok:
             mismatches.append((str(path), schema_ok, pydantic_ok))
     assert mismatches == []
+

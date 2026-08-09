@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from homechef_booking.schemas.tools import parse_find_chefs_result
+from homechef_booking.schemas.tools import FindChefsInput, parse_find_chefs_result
 
 
 class UserMessage(BaseModel):
@@ -56,11 +56,6 @@ class ToolMessage(BaseModel):
     content: str
 
 
-HistoryMessage = (
-    UserMessage | AssistantTextMessage | AssistantToolCallMessage | ToolMessage
-)
-
-
 def _parse_history_message(msg: dict) -> BaseModel:
     """Parse a single raw dict into the correct history message type."""
     role = msg.get("role")
@@ -80,34 +75,42 @@ def parse_history_messages(raw_messages: list[dict]) -> list[BaseModel]:
     return [_parse_history_message(msg) for msg in raw_messages]
 
 
-def validate_history_sequence(messages: list[BaseModel], user_input: str | None) -> list[str]:
+def validate_history_sequence(
+    messages: list[BaseModel],
+    user_input: str | None,
+) -> list[str]:
     """Validate a history sequence for tool_call_id pairing and resolution.
 
-    Args:
-        messages: Parsed history messages.
-        user_input: The current turn's user_input. None means tool result continuation.
-
-    Returns:
-        List of error strings. Empty list means valid.
+    Also validates that tool_call function.arguments (JSON string) parses
+    into a valid FindChefsInput, and that tool result content parses into
+    a valid FindChefsResult.
     """
     errors: list[str] = []
-    pending_call_ids: set[str] = set()
+    pending_call_ids: dict[str, ToolCallFunction] = {}
 
     for i, msg in enumerate(messages):
         if isinstance(msg, AssistantToolCallMessage):
             for tc in msg.tool_calls:
-                pending_call_ids.add(tc.id)
+                pending_call_ids[tc.id] = tc.function
+                try:
+                    FindChefsInput.model_validate_json(tc.function.arguments)
+                except (ValidationError, ValueError) as exc:
+                    errors.append(
+                        f"message {i}: invalid tool_call arguments: {exc}"
+                    )
         elif isinstance(msg, ToolMessage):
             if msg.tool_call_id not in pending_call_ids:
                 errors.append(
                     f"message {i}: tool_call_id has no pending call"
                 )
             else:
-                pending_call_ids.discard(msg.tool_call_id)
+                pending_call_ids.pop(msg.tool_call_id)
                 try:
                     parse_find_chefs_result(json.loads(msg.content))
                 except (json.JSONDecodeError, ValidationError, ValueError) as exc:
-                    errors.append(f"message {i}: invalid tool result content: {exc}")
+                    errors.append(
+                        f"message {i}: invalid tool result content: {exc}"
+                    )
 
     if user_input is None:
         if pending_call_ids:
@@ -120,13 +123,12 @@ def validate_history_sequence(messages: list[BaseModel], user_input: str | None)
 
 
 __all__ = [
-    "UserMessage",
     "AssistantTextMessage",
     "AssistantToolCallMessage",
-    "ToolCallFunction",
     "ToolCall",
+    "ToolCallFunction",
     "ToolMessage",
-    "HistoryMessage",
+    "UserMessage",
     "parse_history_messages",
     "validate_history_sequence",
 ]

@@ -7,7 +7,7 @@ import re
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, field_validator
-from pydantic.types import StrictBool, StrictInt, StrictStr
+from pydantic.types import StrictBool, StrictFloat, StrictInt, StrictStr
 
 _START_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
@@ -58,6 +58,22 @@ QUERY_DEPENDENCY_FIELDS = [
     "chef_name",
 ]
 
+AFFIRMATIVE_ALLOWLIST = frozenset({
+    "确认",
+    "好的",
+    "可以",
+    "没问题",
+    "行",
+    "嗯",
+    "对",
+    "是的",
+    "确定",
+    "就这样",
+    "预约吧",
+    "下单吧",
+    "订吧",
+})
+
 
 class CandidateChef(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -69,24 +85,24 @@ class CandidateChef(BaseModel):
 class BookingSlot(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    service_date: str | None = None
-    start_time: str | None = None
+    service_date: StrictStr | None = None
+    start_time: StrictStr | None = None
     people: StrictInt | None = None
-    address: str | None = None
-    cuisine: str | None = None
-    budget_min: float | None = None
-    budget_max: float | None = None
-    menu: list[str] = []
-    chef_id: str | None = None
-    chef_name: str | None = None
+    address: StrictStr | None = None
+    cuisine: StrictStr | None = None
+    budget_min: StrictFloat | None = None
+    budget_max: StrictFloat | None = None
+    menu: list[StrictStr] = []
+    chef_id: StrictStr | None = None
+    chef_name: StrictStr | None = None
     ingredient_purchase: StrictBool | None = None
-    dietary_constraints: list[str] = []
-    occasion: str | None = None
-    confirmation: bool | None = None
+    dietary_constraints: list[StrictStr] = []
+    occasion: StrictStr | None = None
+    confirmation: StrictBool | None = None
 
     @field_validator("service_date")
     @classmethod
-    def validate_service_date(cls, v: str | None) -> str | None:
+    def validate_service_date(cls, v: StrictStr | None) -> StrictStr | None:
         if v is None:
             return None
         try:
@@ -97,7 +113,7 @@ class BookingSlot(BaseModel):
 
     @field_validator("start_time")
     @classmethod
-    def validate_start_time(cls, v: str | None) -> str | None:
+    def validate_start_time(cls, v: StrictStr | None) -> StrictStr | None:
         if v is None:
             return None
         if not _START_TIME_RE.match(v):
@@ -111,7 +127,7 @@ class DecisionState(BaseModel):
     booking_state: BookingSlot
     chef_query_status: ChefQueryStatus = ChefQueryStatus.not_checked
     candidate_chefs: list[CandidateChef] = []
-    awaiting_confirmation: bool = False
+    awaiting_confirmation: StrictBool = False
 
 
 def missing_required_slots(slot: BookingSlot) -> list[str]:
@@ -133,14 +149,22 @@ def is_info_complete(slot: BookingSlot) -> bool:
     return len(missing_required_slots(slot)) == 0
 
 
+def is_affirmative(text: str) -> bool:
+    """Check if user input is a deterministic affirmative."""
+    normalized = text.strip()
+    return normalized in AFFIRMATIVE_ALLOWLIST
+
+
 __all__ = [
+    "AFFIRMATIVE_ALLOWLIST",
+    "REQUIRED_SLOTS",
+    "QUERY_DEPENDENCY_FIELDS",
     "BookingSlot",
     "CandidateChef",
     "ChefQueryStatus",
     "DecisionState",
     "ReplyType",
-    "REQUIRED_SLOTS",
-    "QUERY_DEPENDENCY_FIELDS",
+    "is_affirmative",
     "is_info_complete",
     "missing_required_slots",
 ]

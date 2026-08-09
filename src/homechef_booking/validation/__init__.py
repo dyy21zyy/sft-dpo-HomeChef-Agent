@@ -2,10 +2,11 @@
 
 from homechef_booking.validation.contract_validator import (
     ValidationIssue,
-    json_schema_verdict,
+    business_contract_verdict,
+    json_schema_structural_verdict,
     main,
     parse_model_json,
-    pydantic_verdict,
+    pydantic_structural_verdict,
     validate_contract_files,
     validate_decision,
     validate_find_chefs_result,
@@ -14,10 +15,11 @@ from homechef_booking.validation.contract_validator import (
 
 __all__ = [
     "ValidationIssue",
-    "json_schema_verdict",
+    "business_contract_verdict",
+    "json_schema_structural_verdict",
     "main",
     "parse_model_json",
-    "pydantic_verdict",
+    "pydantic_structural_verdict",
     "validate_contract_files",
     "validate_decision",
     "validate_find_chefs_result",

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
+from pydantic import BaseModel, ConfigDict
 
 from homechef_booking.schemas.booking import (
     BookingSlot,
@@ -12,6 +12,7 @@ from homechef_booking.schemas.booking import (
     ChefQueryStatus,
     ReplyType,
 )
+from homechef_booking.schemas.tools import FindChefsInput
 
 
 class ToolCallDecision(BaseModel):
@@ -19,7 +20,7 @@ class ToolCallDecision(BaseModel):
 
     action: Literal["tool_call"] = "tool_call"
     tool_name: Literal["find_chefs"] = "find_chefs"
-    arguments: dict[str, Any]
+    arguments: FindChefsInput
 
 
 class FinalDecision(BaseModel):
@@ -36,22 +37,23 @@ class FinalDecision(BaseModel):
     reply: str | None = None
 
 
-Decision = Annotated[ToolCallDecision | FinalDecision, Field(discriminator="action")]
-
-_decision_adapter = TypeAdapter(Decision)
-
-
-def parse_decision_obj(obj: dict[str, Any]) -> ToolCallDecision | FinalDecision:
+def parse_decision_obj(obj: dict) -> ToolCallDecision | FinalDecision:
     """Parse a raw dict into the discriminated Decision union."""
-    try:
-        return _decision_adapter.validate_python(obj)
-    except ValidationError:
-        raise
+    action = obj.get("action")
+    if action == "tool_call":
+        return ToolCallDecision.model_validate(obj)
+    if action == "final":
+        return FinalDecision.model_validate(obj)
+    from pydantic import ValidationError
+
+    raise ValidationError(
+        f"Invalid action: {action}",
+        model=ToolCallDecision,
+    )
 
 
 __all__ = [
-    "ToolCallDecision",
     "FinalDecision",
-    "Decision",
+    "ToolCallDecision",
     "parse_decision_obj",
 ]
