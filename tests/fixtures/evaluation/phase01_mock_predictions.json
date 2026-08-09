@@ -1,0 +1,59 @@
+{
+  "case_candidate_order_mutation": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": null, \"chef_name\": null, \"confirmation\": false, \"cuisine\": \"川菜\", \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\"}, {\"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\"}], \"chef_query_status\": \"matched\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"可选王师傅或李师傅，请选择一位厨师。\", \"reply_type\": \"present_chef_candidates\", \"unrelated\": false}"
+  },
+  "case_candidate_selection": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\", \"confirmation\": false, \"cuisine\": \"川菜\", \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\"}, {\"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\"}], \"chef_query_status\": \"matched\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"已选择王师傅，请确认是否预约。\", \"reply_type\": \"confirm_specific_chef\", \"unrelated\": false}"
+  },
+  "case_dietary_reversal": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": null, \"chef_name\": null, \"confirmation\": null, \"cuisine\": \"川菜\", \"dietary_constraints\": [\"可以吃花生\"], \"ingredient_purchase\": null, \"menu\": [\"水煮鱼\"], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [], \"chef_query_status\": \"not_checked\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"已记录水煮鱼。\", \"reply_type\": \"acknowledge_result\", \"unrelated\": false}"
+  },
+  "case_explicit_confirmation": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\", \"confirmation\": true, \"cuisine\": \"川菜\", \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\"}, {\"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\"}], \"chef_query_status\": \"matched\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"已确认授权为王师傅提交预约，请等待系统创建订单。\", \"reply_type\": \"booking_authorized\", \"unrelated\": false}"
+  },
+  "case_fabricated_chef": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": \"chef_999\", \"chef_name\": \"赵师傅\", \"confirmation\": false, \"cuisine\": \"川菜\", \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\"}], \"chef_query_status\": \"matched\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"已选择赵师傅，请确认。\", \"reply_type\": \"confirm_specific_chef\", \"unrelated\": false}"
+  },
+  "case_invalid_json": {
+    "raw_text": "not json"
+  },
+  "case_matched_candidates": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": null, \"chef_name\": null, \"confirmation\": false, \"cuisine\": \"川菜\", \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\"}, {\"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\"}], \"chef_query_status\": \"matched\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"可选李师傅或王师傅，请选择一位厨师。\", \"reply_type\": \"present_chef_candidates\", \"unrelated\": false}"
+  },
+  "case_missing_required_slots": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": null, \"budget_max\": null, \"budget_min\": null, \"chef_id\": null, \"chef_name\": null, \"confirmation\": null, \"cuisine\": null, \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": \"家宴\", \"people\": null, \"service_date\": null, \"start_time\": null}, \"candidate_chefs\": [], \"chef_query_status\": \"not_checked\", \"info_complete\": false, \"missing_info\": [\"service_date\", \"start_time\", \"people\", \"address\"], \"reply\": \"请补充用餐日期、开始时间、人数和服务地址。\", \"reply_type\": \"ask_multiple_required_fields\", \"unrelated\": false}"
+  },
+  "case_mutation_after_confirmation": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\", \"confirmation\": false, \"cuisine\": \"川菜\", \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 3, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\"}, {\"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\"}], \"chef_query_status\": \"matched\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"已保留王师傅，请确认是否预约。\", \"reply_type\": \"confirm_specific_chef\", \"unrelated\": false}"
+  },
+  "case_no_match": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": 200.0, \"budget_min\": null, \"chef_id\": null, \"chef_name\": null, \"confirmation\": false, \"cuisine\": \"川菜\", \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 20, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [], \"chef_query_status\": \"no_match\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"当前条件下没有匹配厨师，可以调整时间、人数或预算后再查。\", \"reply_type\": \"inform_no_match\", \"unrelated\": false}"
+  },
+  "case_out_of_service_area": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"北京市朝阳区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": null, \"chef_name\": null, \"confirmation\": false, \"cuisine\": \"川菜\", \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [], \"chef_query_status\": \"out_of_service_area\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"该地址暂不在服务范围内。\", \"reply_type\": \"inform_out_of_service_area\", \"unrelated\": false}"
+  },
+  "case_premature_find_chefs": {
+    "raw_text": "{\"action\": \"tool_call\", \"arguments\": {\"address\": null, \"budget_max\": null, \"budget_min\": null, \"chef_name\": null, \"cuisine\": null, \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"tool_name\": \"find_chefs\"}"
+  },
+  "case_specific_available": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\", \"confirmation\": false, \"cuisine\": null, \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\"}], \"chef_query_status\": \"available\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"李师傅可以服务，请确认是否预约李师傅。\", \"reply_type\": \"confirm_specific_chef\", \"unrelated\": false}"
+  },
+  "case_specific_unavailable": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": null, \"chef_name\": \"李师傅\", \"confirmation\": false, \"cuisine\": null, \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\"}], \"chef_query_status\": \"unavailable\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"李师傅该时间不可用，可选王师傅。\", \"reply_type\": \"present_alternatives\", \"unrelated\": false}"
+  },
+  "case_tool_error": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": null, \"chef_name\": null, \"confirmation\": false, \"cuisine\": null, \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [], \"chef_query_status\": \"error\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"查询厨师服务暂时不可用，请稍后再试。\", \"reply_type\": \"booking_paused\", \"unrelated\": false}"
+  },
+  "case_unauthorized_booking": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\", \"confirmation\": true, \"cuisine\": \"川菜\", \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\"}], \"chef_query_status\": \"available\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"预约已成功创建。\", \"reply_type\": \"booking_authorized\", \"unrelated\": false}"
+  },
+  "case_unavailable_reversal": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": \"上海市徐汇区\", \"budget_max\": null, \"budget_min\": null, \"chef_id\": \"chef_001\", \"chef_name\": \"李师傅\", \"confirmation\": false, \"cuisine\": null, \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"candidate_chefs\": [{\"chef_id\": \"chef_002\", \"chef_name\": \"王师傅\"}], \"chef_query_status\": \"available\", \"info_complete\": true, \"missing_info\": [], \"reply\": \"已为你选择李师傅，请确认。\", \"reply_type\": \"confirm_specific_chef\", \"unrelated\": false}"
+  },
+  "case_unrelated": {
+    "raw_text": "{\"action\": \"final\", \"booking_state\": {\"address\": null, \"budget_max\": null, \"budget_min\": null, \"chef_id\": null, \"chef_name\": null, \"confirmation\": null, \"cuisine\": null, \"dietary_constraints\": [], \"ingredient_purchase\": null, \"menu\": [], \"occasion\": null, \"people\": null, \"service_date\": null, \"start_time\": null}, \"candidate_chefs\": [], \"chef_query_status\": \"not_checked\", \"info_complete\": false, \"missing_info\": [], \"reply\": \"这不是上门私厨预约问题，请切换到相应服务。\", \"reply_type\": \"handoff\", \"unrelated\": true}"
+  },
+  "case_valid_search_tool_call": {
+    "raw_text": "{\"action\": \"tool_call\", \"arguments\": {\"address\": \"上海市徐汇区\", \"budget_max\": 900.0, \"budget_min\": 500.0, \"chef_name\": null, \"cuisine\": \"川菜\", \"dietary_constraints\": [\"不吃花生\"], \"ingredient_purchase\": true, \"menu\": [\"水煮鱼\"], \"occasion\": \"生日\", \"people\": 2, \"service_date\": \"2026-08-10\", \"start_time\": \"18:00\"}, \"tool_name\": \"find_chefs\"}"
+  }
+}

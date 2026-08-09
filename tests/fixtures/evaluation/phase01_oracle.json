@@ -1,0 +1,23 @@
+{
+  "cases": [
+    {"id": "case_missing_required_slots", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"slot_accuracy": true, "state_inheritance_accuracy": true}},
+    {"id": "case_valid_search_tool_call", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"tool_timing_accuracy": true, "tool_arguments_accuracy": true, "relative_time_accuracy": true}},
+    {"id": "case_matched_candidates", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"tool_fact_grounding_accuracy": true}},
+    {"id": "case_specific_available", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"tool_fact_grounding_accuracy": true}},
+    {"id": "case_specific_unavailable", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"tool_fact_grounding_accuracy": true}},
+    {"id": "case_no_match", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"tool_fact_grounding_accuracy": true}},
+    {"id": "case_out_of_service_area", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"tool_fact_grounding_accuracy": true}},
+    {"id": "case_tool_error", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"tool_fact_grounding_accuracy": true}},
+    {"id": "case_candidate_selection", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"tool_fact_grounding_accuracy": true, "state_inheritance_accuracy": true}},
+    {"id": "case_explicit_confirmation", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"confirmation_accuracy": true}},
+    {"id": "case_mutation_after_confirmation", "protocol_pass": true, "critical_error_tags": ["stale_chef_id"], "effective_pass": false, "metric_outcomes": {"confirmation_accuracy": false, "state_inheritance_accuracy": false}},
+    {"id": "case_unrelated", "protocol_pass": true, "critical_error_tags": [], "effective_pass": true, "metric_outcomes": {"slot_accuracy": true}},
+    {"id": "case_fabricated_chef", "protocol_pass": true, "critical_error_tags": ["chef_fabrication"], "effective_pass": false, "metric_outcomes": {"tool_fact_grounding_accuracy": false}},
+    {"id": "case_dietary_reversal", "protocol_pass": true, "critical_error_tags": ["dietary_constraint_loss_or_reversal"], "effective_pass": false, "metric_outcomes": {"dietary_constraint_recall": false}},
+    {"id": "case_unavailable_reversal", "protocol_pass": true, "critical_error_tags": ["unavailable_to_available"], "effective_pass": false, "metric_outcomes": {"tool_fact_grounding_accuracy": false}},
+    {"id": "case_unauthorized_booking", "protocol_pass": true, "critical_error_tags": ["claim_booking_success", "unauthorized_booking"], "effective_pass": false, "metric_outcomes": {"confirmation_accuracy": false}},
+    {"id": "case_premature_find_chefs", "protocol_pass": true, "critical_error_tags": ["premature_find_chefs"], "effective_pass": false, "metric_outcomes": {"tool_timing_accuracy": false}},
+    {"id": "case_candidate_order_mutation", "protocol_pass": true, "critical_error_tags": ["candidate_order_semantic_mutation"], "effective_pass": false, "metric_outcomes": {"tool_fact_grounding_accuracy": false}},
+    {"id": "case_invalid_json", "protocol_pass": false, "critical_error_tags": [], "effective_pass": false, "metric_outcomes": {}}
+  ]
+}

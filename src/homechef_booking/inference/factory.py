@@ -9,11 +9,13 @@ from homechef_booking.inference.backend import Backend
 from homechef_booking.inference.mock_backend import MockBackend
 
 
-def load_backend(config_path: Path) -> Backend:
+def load_backend(config_path: Path, predictions_path: Path | None = None) -> Backend:
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if config["backend"] != "mock":
         raise NotImplementedError(f"Phase 01 supports only mock backend, got {config['backend']}")
-    if "predictions_path" in config:
+    if predictions_path is not None:
+        predictions = json.loads(predictions_path.read_text(encoding="utf-8"))
+    elif "predictions_path" in config:
         predictions_path = Path(config["predictions_path"])
         predictions = json.loads(predictions_path.read_text(encoding="utf-8"))
     else:

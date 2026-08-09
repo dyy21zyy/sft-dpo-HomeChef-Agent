@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 homechef-contract-validate = "homechef_booking.validation.contract_validator:main"
+homechef-eval = "homechef_booking.cli:main"
 
 [project.optional-dependencies]
 dev = [

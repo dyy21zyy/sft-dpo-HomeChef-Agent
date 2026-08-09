@@ -1,0 +1,5 @@
+run_id: phase01_mock
+cases_path: tests/fixtures/evaluation/phase01_mock_cases.jsonl
+backend_config_path: configs/inference/mock.yaml
+predictions_path: tests/fixtures/evaluation/phase01_mock_predictions.json
+output_dir: reports/generated
