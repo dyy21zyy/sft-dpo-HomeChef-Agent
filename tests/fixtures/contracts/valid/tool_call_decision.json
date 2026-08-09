@@ -1,0 +1,18 @@
+{
+  "action": "tool_call",
+  "tool_name": "find_chefs",
+  "arguments": {
+    "chef_name": null,
+    "service_date": "2026-08-15",
+    "start_time": "18:00",
+    "people": 6,
+    "address": "杨浦",
+    "cuisine": "川菜",
+    "budget_min": 800.0,
+    "budget_max": 1200.0,
+    "menu": [],
+    "ingredient_purchase": null,
+    "dietary_constraints": [],
+    "occasion": "家庭聚餐"
+  }
+}

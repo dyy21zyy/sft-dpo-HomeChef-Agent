@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class BookingRuntimeInput(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     history: list[dict] = []
     current_state: dict

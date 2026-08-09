@@ -11,28 +11,28 @@ from homechef_booking.schemas.tools import parse_find_chefs_result
 
 
 class UserMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     role: Literal["user"]
     content: str
 
 
 class AssistantTextMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     role: Literal["assistant"]
     content: str | None
 
 
 class ToolCallFunction(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     name: Literal["find_chefs"]
     arguments: str
 
 
 class ToolCall(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     id: str
     type: Literal["function"]
@@ -40,7 +40,7 @@ class ToolCall(BaseModel):
 
 
 class AssistantToolCallMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     role: Literal["assistant"]
     content: None = None
@@ -48,7 +48,7 @@ class AssistantToolCallMessage(BaseModel):
 
 
 class ToolMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     role: Literal["tool"]
     tool_call_id: str

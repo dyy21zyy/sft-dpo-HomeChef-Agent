@@ -15,7 +15,7 @@ from homechef_booking.schemas.booking import (
 
 
 class ToolCallDecision(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     action: Literal["tool_call"] = "tool_call"
     tool_name: Literal["find_chefs"] = "find_chefs"
@@ -23,7 +23,7 @@ class ToolCallDecision(BaseModel):
 
 
 class FinalDecision(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     action: Literal["final"] = "final"
     booking_state: BookingSlot

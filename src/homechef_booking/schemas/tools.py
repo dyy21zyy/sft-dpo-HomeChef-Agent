@@ -13,14 +13,14 @@ _START_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
 class CandidateChef(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     chef_id: StrictStr
     chef_name: StrictStr
 
 
 class FindChefsInput(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     chef_name: str | None = None
     service_date: str | None = None
@@ -57,7 +57,7 @@ class FindChefsInput(BaseModel):
 
 
 class SearchMatchedResult(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     mode: Literal["search"]
     status: Literal["matched"]
@@ -65,35 +65,35 @@ class SearchMatchedResult(BaseModel):
 
 
 class SearchNoMatchResult(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     mode: Literal["search"]
     status: Literal["no_match"]
 
 
 class SearchOutOfServiceAreaResult(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     mode: Literal["search"]
     status: Literal["out_of_service_area"]
 
 
 class SearchErrorResult(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     mode: Literal["search"]
     status: Literal["error"]
 
 
 class SpecificAvailableResult(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     mode: Literal["specific"]
     status: Literal["available"]
 
 
 class SpecificUnavailableResult(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     mode: Literal["specific"]
     status: Literal["unavailable"]
@@ -101,21 +101,21 @@ class SpecificUnavailableResult(BaseModel):
 
 
 class SpecificNotFoundResult(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     mode: Literal["specific"]
     status: Literal["not_found"]
 
 
 class SpecificOutOfServiceAreaResult(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     mode: Literal["specific"]
     status: Literal["out_of_service_area"]
 
 
 class SpecificErrorResult(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     mode: Literal["specific"]
     status: Literal["error"]

@@ -7,7 +7,7 @@ import re
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, field_validator
-from pydantic.types import StrictStr
+from pydantic.types import StrictBool, StrictInt, StrictStr
 
 _START_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
@@ -60,18 +60,18 @@ QUERY_DEPENDENCY_FIELDS = [
 
 
 class CandidateChef(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     chef_id: StrictStr
     chef_name: StrictStr
 
 
 class BookingSlot(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     service_date: str | None = None
     start_time: str | None = None
-    people: int | None = None
+    people: StrictInt | None = None
     address: str | None = None
     cuisine: str | None = None
     budget_min: float | None = None
@@ -79,7 +79,7 @@ class BookingSlot(BaseModel):
     menu: list[str] = []
     chef_id: str | None = None
     chef_name: str | None = None
-    ingredient_purchase: bool | None = None
+    ingredient_purchase: StrictBool | None = None
     dietary_constraints: list[str] = []
     occasion: str | None = None
     confirmation: bool | None = None
@@ -106,7 +106,7 @@ class BookingSlot(BaseModel):
 
 
 class DecisionState(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     booking_state: BookingSlot
     chef_query_status: ChefQueryStatus = ChefQueryStatus.not_checked

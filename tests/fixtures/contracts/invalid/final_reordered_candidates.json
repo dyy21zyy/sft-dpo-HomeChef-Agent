@@ -1,0 +1,29 @@
+{
+  "action": "final",
+  "booking_state": {
+    "service_date": "2026-08-15",
+    "start_time": "18:00",
+    "people": 6,
+    "address": "杨浦",
+    "cuisine": "川菜",
+    "budget_min": 800.0,
+    "budget_max": 1200.0,
+    "menu": [],
+    "chef_id": null,
+    "chef_name": null,
+    "ingredient_purchase": null,
+    "dietary_constraints": [],
+    "occasion": "家庭聚餐",
+    "confirmation": null
+  },
+  "chef_query_status": "matched",
+  "candidate_chefs": [
+    {"chef_id": "C007", "chef_name": "李明"},
+    {"chef_id": "C003", "chef_name": "张伟"}
+  ],
+  "info_complete": true,
+  "unrelated": false,
+  "missing_info": [],
+  "reply_type": "present_chef_candidates",
+  "reply": "找到两位符合当前条件的厨师。"
+}

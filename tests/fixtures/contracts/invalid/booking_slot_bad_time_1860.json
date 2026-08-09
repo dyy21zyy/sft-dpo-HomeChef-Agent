@@ -1,0 +1,26 @@
+{
+  "action": "final",
+  "booking_state": {
+    "service_date": null,
+    "start_time": "18:60",
+    "people": 6,
+    "address": "杨浦",
+    "cuisine": "川菜",
+    "budget_min": 800.0,
+    "budget_max": 1200.0,
+    "menu": [],
+    "chef_id": null,
+    "chef_name": null,
+    "ingredient_purchase": null,
+    "dietary_constraints": [],
+    "occasion": "家庭聚餐",
+    "confirmation": null
+  },
+  "chef_query_status": "not_checked",
+  "candidate_chefs": [],
+  "info_complete": false,
+  "unrelated": false,
+  "missing_info": ["service_date"],
+  "reply_type": "ask_service_date",
+  "reply": "ok"
+}
