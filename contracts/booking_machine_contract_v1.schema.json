@@ -1,0 +1,374 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "booking_machine_contract_v1.schema.json",
+  "title": "HomeChef Booking Machine Contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "BookingRuntimeInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["history", "current_state", "user_input", "current_time", "available_tools"],
+      "properties": {
+        "history": { "type": "array", "items": { "$ref": "#/$defs/HistoryMessage" } },
+        "current_state": { "$ref": "#/$defs/DecisionState" },
+        "user_input": { "type": ["string", "null"] },
+        "current_time": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$"
+        },
+        "available_tools": { "type": "array", "items": { "$ref": "#/$defs/ToolSpec" } }
+      }
+    },
+    "BookingSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "service_date", "start_time", "people", "address", "cuisine",
+        "budget_min", "budget_max", "menu", "chef_id", "chef_name",
+        "ingredient_purchase", "dietary_constraints", "occasion", "confirmation"
+      ],
+      "properties": {
+        "service_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "start_time": { "type": ["string", "null"], "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+        "people": { "type": ["integer", "null"] },
+        "address": { "type": ["string", "null"] },
+        "cuisine": { "type": ["string", "null"] },
+        "budget_min": { "type": ["number", "null"] },
+        "budget_max": { "type": ["number", "null"] },
+        "menu": { "type": "array", "items": { "type": "string" } },
+        "chef_id": { "type": ["string", "null"] },
+        "chef_name": { "type": ["string", "null"] },
+        "ingredient_purchase": { "type": ["boolean", "null"] },
+        "dietary_constraints": { "type": "array", "items": { "type": "string" } },
+        "occasion": { "type": ["string", "null"] },
+        "confirmation": { "type": ["boolean", "null"] }
+      }
+    },
+    "DecisionState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["booking_state", "chef_query_status", "candidate_chefs", "awaiting_confirmation"],
+      "properties": {
+        "booking_state": { "$ref": "#/$defs/BookingSlot" },
+        "chef_query_status": {
+          "type": "string",
+          "enum": ["not_checked", "matched", "available", "unavailable", "not_found", "no_match", "out_of_service_area", "error"]
+        },
+        "candidate_chefs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["chef_id", "chef_name"],
+            "properties": {
+              "chef_id": { "type": "string" },
+              "chef_name": { "type": "string" }
+            }
+          }
+        },
+        "awaiting_confirmation": { "type": "boolean" }
+      }
+    },
+    "ToolCallDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "tool_name", "arguments"],
+      "properties": {
+        "action": { "const": "tool_call" },
+        "tool_name": { "const": "find_chefs" },
+        "arguments": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "chef_name", "service_date", "start_time", "people", "address",
+            "cuisine", "budget_min", "budget_max", "menu", "ingredient_purchase",
+            "dietary_constraints", "occasion"
+          ],
+          "properties": {
+            "chef_name": { "type": ["string", "null"] },
+            "service_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "start_time": { "type": ["string", "null"], "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+            "people": { "type": ["integer", "null"] },
+            "address": { "type": ["string", "null"] },
+            "cuisine": { "type": ["string", "null"] },
+            "budget_min": { "type": ["number", "null"] },
+            "budget_max": { "type": ["number", "null"] },
+            "menu": { "type": "array", "items": { "type": "string" } },
+            "ingredient_purchase": { "type": ["boolean", "null"] },
+            "dietary_constraints": { "type": "array", "items": { "type": "string" } },
+            "occasion": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "FinalDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action", "booking_state", "chef_query_status", "candidate_chefs",
+        "info_complete", "unrelated", "missing_info", "reply_type", "reply"
+      ],
+      "properties": {
+        "action": { "const": "final" },
+        "booking_state": { "$ref": "#/$defs/BookingSlot" },
+        "chef_query_status": {
+          "type": "string",
+          "enum": ["not_checked", "matched", "available", "unavailable", "not_found", "no_match", "out_of_service_area", "error"]
+        },
+        "candidate_chefs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["chef_id", "chef_name"],
+            "properties": {
+              "chef_id": { "type": "string" },
+              "chef_name": { "type": "string" }
+            }
+          }
+        },
+        "info_complete": { "type": "boolean" },
+        "unrelated": { "type": "boolean" },
+        "missing_info": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["service_date", "start_time", "people", "address"] }
+        },
+        "reply_type": {
+          "type": "string",
+          "enum": [
+            "handoff", "ask_service_date", "ask_start_time", "ask_people", "ask_address",
+            "ask_multiple_required_fields", "present_chef_candidates", "confirm_specific_chef",
+            "present_alternatives", "inform_not_found", "inform_no_match",
+            "inform_out_of_service_area", "booking_authorized", "booking_paused", "acknowledge_result"
+          ]
+        },
+        "reply": { "type": ["string", "null"] }
+      }
+    },
+    "Decision": {
+      "oneOf": [
+        { "$ref": "#/$defs/ToolCallDecision" },
+        { "$ref": "#/$defs/FinalDecision" }
+      ]
+    },
+    "HistoryMessage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "content"],
+          "properties": {
+            "role": { "const": "user" },
+            "content": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "content"],
+          "properties": {
+            "role": { "const": "assistant" },
+            "content": { "type": ["string", "null"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "content", "tool_calls"],
+          "properties": {
+            "role": { "const": "assistant" },
+            "content": { "type": "null" },
+            "tool_calls": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "type", "function"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "type": { "const": "function" },
+                  "function": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["name", "arguments"],
+                    "properties": {
+                      "name": { "const": "find_chefs" },
+                      "arguments": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "tool_call_id", "name", "content"],
+          "properties": {
+            "role": { "const": "tool" },
+            "tool_call_id": { "type": "string" },
+            "name": { "const": "find_chefs" },
+            "content": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "ToolSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "function"],
+      "properties": {
+        "type": { "type": "string" },
+        "function": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "description", "parameters"],
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "parameters": { "type": "object" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "BookingSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "service_date", "start_time", "people", "address", "cuisine",
+        "budget_min", "budget_max", "menu", "chef_id", "chef_name",
+        "ingredient_purchase", "dietary_constraints", "occasion", "confirmation"
+      ],
+      "properties": {
+        "service_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "start_time": { "type": ["string", "null"], "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+        "people": { "type": ["integer", "null"] },
+        "address": { "type": ["string", "null"] },
+        "cuisine": { "type": ["string", "null"] },
+        "budget_min": { "type": ["number", "null"] },
+        "budget_max": { "type": ["number", "null"] },
+        "menu": { "type": "array", "items": { "type": "string" } },
+        "chef_id": { "type": ["string", "null"] },
+        "chef_name": { "type": ["string", "null"] },
+        "ingredient_purchase": { "type": ["boolean", "null"] },
+        "dietary_constraints": { "type": "array", "items": { "type": "string" } },
+        "occasion": { "type": ["string", "null"] },
+        "confirmation": { "type": ["boolean", "null"] }
+      }
+    },
+    "DecisionState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["booking_state", "chef_query_status", "candidate_chefs", "awaiting_confirmation"],
+      "properties": {
+        "booking_state": { "$ref": "#/$defs/BookingSlot" },
+        "chef_query_status": {
+          "type": "string",
+          "enum": ["not_checked", "matched", "available", "unavailable", "not_found", "no_match", "out_of_service_area", "error"]
+        },
+        "candidate_chefs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["chef_id", "chef_name"],
+            "properties": {
+              "chef_id": { "type": "string" },
+              "chef_name": { "type": "string" }
+            }
+          }
+        },
+        "awaiting_confirmation": { "type": "boolean" }
+      }
+    },
+    "HistoryMessage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "content"],
+          "properties": {
+            "role": { "const": "user" },
+            "content": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "content"],
+          "properties": {
+            "role": { "const": "assistant" },
+            "content": { "type": ["string", "null"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "content", "tool_calls"],
+          "properties": {
+            "role": { "const": "assistant" },
+            "content": { "type": "null" },
+            "tool_calls": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "type", "function"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "type": { "const": "function" },
+                  "function": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["name", "arguments"],
+                    "properties": {
+                      "name": { "const": "find_chefs" },
+                      "arguments": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "tool_call_id", "name", "content"],
+          "properties": {
+            "role": { "const": "tool" },
+            "tool_call_id": { "type": "string" },
+            "name": { "const": "find_chefs" },
+            "content": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "ToolSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "function"],
+      "properties": {
+        "type": { "type": "string" },
+        "function": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "description", "parameters"],
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "parameters": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}

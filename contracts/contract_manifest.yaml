@@ -1,0 +1,13 @@
+contract_id: homechef-booking-v1
+version: v1
+status: FROZEN
+effective_date: 2026-08-08
+hash_mode: normalized_utf8_lf
+source_documents:
+  BOOKING_MACHINE_CONTRACT_v1.md:
+    sha256: 8c23d81de75bae6e0f6b1770904b25f7986f6b98950da27ea79d072bac3a039e
+  finetune-spec.md:
+    sha256: 5f502d0c55aab15b12b9610d66f6bffce69ec3eda0927e9ad1b44cc0eaf4326a
+schemas:
+  - contracts/booking_machine_contract_v1.schema.json
+  - contracts/find_chefs_v1.schema.json
