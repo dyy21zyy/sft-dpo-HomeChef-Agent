@@ -46,7 +46,7 @@ def patch_tool_properties(props: dict) -> int:
 if "tool_spec" in spec:
     params = spec["tool_spec"].get("function", {}).get("parameters", {})
     if params and "properties" in params:
-        print(f"Patching top-level tool_spec:")
+        print("Patching top-level tool_spec:")
         patches_applied += patch_tool_properties(params["properties"])
 
 # Patch all cases

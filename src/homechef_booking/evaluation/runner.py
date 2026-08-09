@@ -9,11 +9,11 @@ from homechef_booking.evaluation.critical_errors import classify_critical_errors
 from homechef_booking.evaluation.effective_pass import effective_pass
 from homechef_booking.evaluation.evidence import derive_tool_evidence
 from homechef_booking.evaluation.results import CaseResult
-from homechef_booking.evaluation.sample import EvalCase, load_eval_cases
+from homechef_booking.evaluation.sample import load_eval_cases
 from homechef_booking.evaluation.scorecard import Scorecard, aggregate_scorecard, save_scorecard
 from homechef_booking.evaluation.scorers.protocol import ProtocolScorer
 from homechef_booking.evaluation.scorers.task_correctness import TaskCorrectnessScorer
-from homechef_booking.inference.backend import Backend, GenerationParams
+from homechef_booking.inference.backend import GenerationParams
 from homechef_booking.inference.factory import load_backend
 from homechef_booking.inference.runner import run_inference
 

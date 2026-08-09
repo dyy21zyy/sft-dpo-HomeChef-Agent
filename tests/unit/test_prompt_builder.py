@@ -3,7 +3,6 @@
 from homechef_booking.prompts import PromptBuilder
 from homechef_booking.schemas.runtime import BookingRuntimeInput
 
-
 FIND_CHEFS_TOOL = {
     "type": "function",
     "function": {

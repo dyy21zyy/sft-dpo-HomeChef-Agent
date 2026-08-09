@@ -1,5 +1,6 @@
 import json
-with open('tests/fixtures/evaluation/phase01_mock_cases.jsonl', 'r', encoding='utf-8') as f:
+
+with open('tests/fixtures/evaluation/phase01_mock_cases.jsonl', encoding='utf-8') as f:
     for line in f:
         case = json.loads(line)
         if case['id'] == 'case_valid_search_tool_call':

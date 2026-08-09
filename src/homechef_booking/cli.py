@@ -1,13 +1,11 @@
 """HomeChef evaluation CLI entry point."""
 
 import argparse
-import json
 from pathlib import Path
 
 import yaml
 
 from homechef_booking.evaluation.runner import EvalConfig, run_evaluation
-from homechef_booking.evaluation.scorecard import save_scorecard
 
 
 def main() -> None:

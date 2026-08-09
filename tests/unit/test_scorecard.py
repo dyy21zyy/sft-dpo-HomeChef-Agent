@@ -1,11 +1,9 @@
 """Task 8: Scorecard and runner tests."""
 
-import json
 from pathlib import Path
 
 from homechef_booking.evaluation.runner import EvalConfig, run_evaluation
 from homechef_booking.evaluation.scorecard import aggregate_scorecard
-
 
 PREDICTIONS_PATH = Path("tests/fixtures/evaluation/phase01_mock_predictions.json")
 

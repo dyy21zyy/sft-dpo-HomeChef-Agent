@@ -10,7 +10,6 @@ from pathlib import Path
 
 from homechef_booking.evaluation.runner import EvalConfig, run_evaluation
 
-
 CASES_PATH = Path("tests/fixtures/evaluation/phase01_mock_cases.jsonl")
 PREDICTIONS_PATH = Path("tests/fixtures/evaluation/phase01_mock_predictions.json")
 ORACLE_PATH = Path("tests/fixtures/evaluation/phase01_oracle.json")

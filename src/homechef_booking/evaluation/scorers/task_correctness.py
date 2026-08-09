@@ -7,7 +7,11 @@ from homechef_booking.evaluation.results import DimensionScore
 from homechef_booking.evaluation.sample import EvalCase
 from homechef_booking.evaluation.scorers.protocol import ProtocolScorer
 from homechef_booking.evaluation.scorers.reply_semantics import score_reply
-from homechef_booking.evaluation.scorers.semantic_slots import Phase01DeterministicEmbedder, TextEmbedder, semantic_slot_f1
+from homechef_booking.evaluation.scorers.semantic_slots import (
+    Phase01DeterministicEmbedder,
+    TextEmbedder,
+    semantic_slot_f1,
+)
 from homechef_booking.inference.response import GenerationResult
 
 TOOL_ARGUMENT_KEYS = ["chef_name", "service_date", "start_time", "people", "address", "cuisine", "budget_min", "budget_max", "menu", "ingredient_purchase", "dietary_constraints", "occasion"]

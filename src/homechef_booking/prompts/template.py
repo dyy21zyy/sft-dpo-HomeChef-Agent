@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import TypeAlias
 
 from homechef_booking.prompts.rules import SYSTEM_RULES
 from homechef_booking.schemas.runtime import BookingRuntimeInput
 
-Message: TypeAlias = dict[str, object]
+type Message = dict[str, object]
 
 
 class PromptBuilder:

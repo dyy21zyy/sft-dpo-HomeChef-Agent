@@ -47,7 +47,7 @@ def semantic_slot_f1(expected: list[str], predicted: list[str], embedder: TextEm
                 matches.append((similarity, expected_index, predicted_index))
     used_expected: set[int] = set()
     used_predicted: set[int] = set()
-    for similarity, expected_index, predicted_index in sorted(matches, reverse=True):
+    for _similarity, expected_index, predicted_index in sorted(matches, reverse=True):
         if expected_index not in used_expected and predicted_index not in used_predicted:
             used_expected.add(expected_index)
             used_predicted.add(predicted_index)
