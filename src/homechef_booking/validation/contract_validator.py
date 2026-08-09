@@ -156,10 +156,14 @@ def json_schema_verdict(path: Path, value: dict[str, Any]) -> bool:
         schema_key = "Decision"
 
     schema_doc = json.loads(schema_path.read_text(encoding="utf-8"))
-    defs = schema_doc.get("$defs", schema_doc.get("properties", {}))
-    sub_schema = defs.get(schema_key, schema_doc)
+    defs = schema_doc.get("$defs", {})
+    properties = schema_doc.get("properties", {})
+    combined = {**defs, **properties}
+    ref_schema = {"$ref": f"#/$defs/{schema_key}", "$defs": combined}
     try:
-        jsonschema.validate(value, sub_schema)
+        validator_cls = jsonschema.Draft202012Validator
+        validator = validator_cls(ref_schema, format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER)
+        validator.validate(value)
         return True
     except jsonschema.ValidationError:
         return False
@@ -170,14 +174,14 @@ def pydantic_verdict(path: Path, value: dict[str, Any]) -> bool:
     name = path.stem
     try:
         if "runtime" in name:
-            validate_runtime_input(value)
+            issues = validate_runtime_input(value)
         elif "find_chefs" in name:
-            validate_find_chefs_result(value)
+            issues = validate_find_chefs_result(value)
         elif "tool_call_decision" in name or "final" in name:
-            validate_decision(value)
+            issues = validate_decision(value)
         else:
-            validate_decision(value)
-        return True
+            issues = validate_decision(value)
+        return len(issues) == 0
     except (ValidationError, ValueError):
         return False
 

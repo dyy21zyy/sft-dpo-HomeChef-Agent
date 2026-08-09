@@ -91,8 +91,8 @@ class BookingSlot(BaseModel):
             return None
         try:
             datetime.date.fromisoformat(v)
-        except ValueError:
-            raise ValueError(f"Invalid calendar date: {v}")
+        except ValueError as exc:
+            raise ValueError(f"Invalid calendar date: {v}") from exc
         return v
 
     @field_validator("start_time")
