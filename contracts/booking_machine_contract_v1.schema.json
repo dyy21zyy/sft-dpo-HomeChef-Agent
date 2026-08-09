@@ -239,7 +239,23 @@
                 "additionalProperties": { "const": false },
                 "required": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "enum": [
+                      "chef_name",
+                      "service_date",
+                      "start_time",
+                      "people",
+                      "address",
+                      "cuisine",
+                      "budget_min",
+                      "budget_max",
+                      "menu",
+                      "ingredient_purchase",
+                      "dietary_constraints",
+                      "occasion"
+                    ]
+                  },
+                  "uniqueItems": true,
                   "minItems": 12,
                   "maxItems": 12
                 },
@@ -438,7 +454,23 @@
                 "additionalProperties": { "const": false },
                 "required": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "enum": [
+                      "chef_name",
+                      "service_date",
+                      "start_time",
+                      "people",
+                      "address",
+                      "cuisine",
+                      "budget_min",
+                      "budget_max",
+                      "menu",
+                      "ingredient_purchase",
+                      "dietary_constraints",
+                      "occasion"
+                    ]
+                  },
+                  "uniqueItems": true,
                   "minItems": 12,
                   "maxItems": 12
                 },
