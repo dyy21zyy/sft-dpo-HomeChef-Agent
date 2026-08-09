@@ -1,0 +1,12 @@
+{
+  "suite_id": "phase02_diagnostic_dev_v1",
+  "contract_id": "homechef-booking-v1",
+  "case_file": "data/dev/diagnostic_dev.jsonl",
+  "case_count": 80,
+  "sha256": "3c68517f6932b09e9123e2d77cf7f3836a13ff4a076a6350c5a813d2e4c4ff1d",
+  "frozen": false,
+  "versioned": true,
+  "created_at": "2026-08-09T14:37:46Z",
+  "approved_by": "ChatGPT",
+  "notes": "Phase 02 Diagnostic Dev suite for error analysis. 80 HomeChef-contract eval cases. May be versioned for Phase 06 iteration."
+}
