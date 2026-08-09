@@ -245,9 +245,53 @@
                 },
                 "properties": {
                   "type": "object",
+                  "additionalProperties": false,
                   "required": ["chef_name","service_date","start_time","people","address","cuisine","budget_min","budget_max","menu","ingredient_purchase","dietary_constraints","occasion"],
-                  "minProperties": 12,
-                  "maxProperties": 12
+                  "properties": {
+                    "chef_name": {
+                      "const": {"type":["string","null"]}
+                    },
+                    "service_date": {
+                      "const": {
+                        "type":["string","null"],
+                        "pattern":"^\\d{4}-\\d{2}-\\d{2}$",
+                        "format":"date"
+                      }
+                    },
+                    "start_time": {
+                      "const": {
+                        "type":["string","null"],
+                        "pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"
+                      }
+                    },
+                    "people": {
+                      "const": {"type":["integer","null"]}
+                    },
+                    "address": {
+                      "const": {"type":["string","null"]}
+                    },
+                    "cuisine": {
+                      "const": {"type":["string","null"]}
+                    },
+                    "budget_min": {
+                      "const": {"type":["number","null"]}
+                    },
+                    "budget_max": {
+                      "const": {"type":["number","null"]}
+                    },
+                    "menu": {
+                      "const": {"type":"array","items":{"type":"string"}}
+                    },
+                    "ingredient_purchase": {
+                      "const": {"type":["boolean","null"]}
+                    },
+                    "dietary_constraints": {
+                      "const": {"type":"array","items":{"type":"string"}}
+                    },
+                    "occasion": {
+                      "const": {"type":["string","null"]}
+                    }
+                  }
                 }
               }
             }
@@ -400,9 +444,53 @@
                 },
                 "properties": {
                   "type": "object",
+                  "additionalProperties": false,
                   "required": ["chef_name","service_date","start_time","people","address","cuisine","budget_min","budget_max","menu","ingredient_purchase","dietary_constraints","occasion"],
-                  "minProperties": 12,
-                  "maxProperties": 12
+                  "properties": {
+                    "chef_name": {
+                      "const": {"type":["string","null"]}
+                    },
+                    "service_date": {
+                      "const": {
+                        "type":["string","null"],
+                        "pattern":"^\\d{4}-\\d{2}-\\d{2}$",
+                        "format":"date"
+                      }
+                    },
+                    "start_time": {
+                      "const": {
+                        "type":["string","null"],
+                        "pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"
+                      }
+                    },
+                    "people": {
+                      "const": {"type":["integer","null"]}
+                    },
+                    "address": {
+                      "const": {"type":["string","null"]}
+                    },
+                    "cuisine": {
+                      "const": {"type":["string","null"]}
+                    },
+                    "budget_min": {
+                      "const": {"type":["number","null"]}
+                    },
+                    "budget_max": {
+                      "const": {"type":["number","null"]}
+                    },
+                    "menu": {
+                      "const": {"type":"array","items":{"type":"string"}}
+                    },
+                    "ingredient_purchase": {
+                      "const": {"type":["boolean","null"]}
+                    },
+                    "dietary_constraints": {
+                      "const": {"type":"array","items":{"type":"string"}}
+                    },
+                    "occasion": {
+                      "const": {"type":["string","null"]}
+                    }
+                  }
                 }
               }
             }

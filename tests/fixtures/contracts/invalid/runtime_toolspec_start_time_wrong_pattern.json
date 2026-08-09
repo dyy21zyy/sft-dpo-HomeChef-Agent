@@ -1,0 +1,54 @@
+{
+  "history": [],
+  "current_state": {
+    "booking_state": {
+      "service_date": null,
+      "start_time": null,
+      "people": null,
+      "address": null,
+      "cuisine": null,
+      "budget_min": null,
+      "budget_max": null,
+      "menu": [],
+      "chef_id": null,
+      "chef_name": null,
+      "ingredient_purchase": null,
+      "dietary_constraints": [],
+      "occasion": null,
+      "confirmation": null
+    },
+    "chef_query_status": "not_checked",
+    "candidate_chefs": [],
+    "awaiting_confirmation": false
+  },
+  "user_input": "周六晚上六点",
+  "current_time": "2026-08-08 17:00",
+  "available_tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "find_chefs",
+        "description": "根据预约约束查询可服务厨师",
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["chef_name","service_date","start_time","people","address","cuisine","budget_min","budget_max","menu","ingredient_purchase","dietary_constraints","occasion"],
+          "properties": {
+            "chef_name": {"type":["string","null"]},
+            "service_date": {"type":["string","null"],"pattern":"^\\d{4}-\\d{2}-\\d{2}$","format":"date"},
+            "start_time": {"type":["string","null"],"pattern":"^[0-9]+$"},
+            "people": {"type":["integer","null"]},
+            "address": {"type":["string","null"]},
+            "cuisine": {"type":["string","null"]},
+            "budget_min": {"type":["number","null"]},
+            "budget_max": {"type":["number","null"]},
+            "menu": {"type":"array","items":{"type":"string"}},
+            "ingredient_purchase": {"type":["boolean","null"]},
+            "dietary_constraints": {"type":"array","items":{"type":"string"}},
+            "occasion": {"type":["string","null"]}
+          }
+        }
+      }
+    }
+  ]
+}
