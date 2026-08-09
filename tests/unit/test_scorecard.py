@@ -7,10 +7,14 @@ from homechef_booking.evaluation.runner import EvalConfig, run_evaluation
 from homechef_booking.evaluation.scorecard import aggregate_scorecard
 
 
+PREDICTIONS_PATH = Path("tests/fixtures/evaluation/phase01_mock_predictions.json")
+
+
 def test_eval_runner_handles_19_mock_cases(tmp_path: Path):
     config = EvalConfig(
         cases_path=Path("tests/fixtures/evaluation/phase01_mock_cases.jsonl"),
         backend_config_path=Path("configs/inference/mock.yaml"),
+        predictions_path=PREDICTIONS_PATH,
         scorecard_path=tmp_path / "scorecard.json",
         case_results_path=tmp_path / "case_results.json",
     )
@@ -27,6 +31,7 @@ def test_scorecard_aggregation_produces_plausible_pass_rates():
     config = EvalConfig(
         cases_path=Path("tests/fixtures/evaluation/phase01_mock_cases.jsonl"),
         backend_config_path=Path("configs/inference/mock.yaml"),
+        predictions_path=PREDICTIONS_PATH,
         scorecard_path=None,
         case_results_path=None,
     )
