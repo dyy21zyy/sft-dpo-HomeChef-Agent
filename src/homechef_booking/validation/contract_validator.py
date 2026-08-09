@@ -237,7 +237,7 @@ def pydantic_verdict(path: Path, value: dict[str, Any]) -> bool:
     """Return True if value passes Pydantic/validator checks."""
     name = path.stem
     try:
-        if "runtime" in name:
+        if "runtime" in name or "history" in name:
             issues = validate_runtime_input(value)
         elif "find_chefs" in name:
             issues = validate_find_chefs_result(value)

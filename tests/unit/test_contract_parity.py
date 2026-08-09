@@ -7,18 +7,12 @@ from homechef_booking.validation.contract_validator import json_schema_verdict, 
 def fixture_paths() -> list[Path]:
     """Return fixture paths for parity check.
 
-    Fixtures that test semantic contract rules (calendar dates, clock times,
-    unrelated/handoff consistency, tool_call_id pairing) are excluded because
-    JSON Schema pattern matching and structural validation cannot express
-    these rules. They are tested separately in their respective test files.
+    Only cross-field business invariants that JSON Schema cannot express
+    are excluded from structural parity. Date and time validation are
+    included because JSON Schema uses format:date with FormatChecker
+    and pattern matching respectively.
     """
-    excluded = {
-        "booking_slot_bad_date",
-        "booking_slot_bad_time_2400",
-        "booking_slot_bad_time_1860",
-        "final_unrelated_not_handoff",
-        "history_tool_continuation",
-    }
+    excluded = {"final_unrelated_not_handoff"}
     return [
         path
         for path in sorted(Path("tests/fixtures/contracts").glob("*/*.json"))

@@ -15,7 +15,7 @@
       ],
       "properties": {
         "chef_name": { "type": ["string", "null"] },
-        "service_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "service_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "format": "date" },
         "start_time": { "type": ["string", "null"], "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
         "people": { "type": ["integer", "null"] },
         "address": { "type": ["string", "null"] },
