@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from homechef_booking.data.dataset_schema import DpoPair, SftMessage
+from homechef_booking.schemas.decision import FinalDecision
 from homechef_booking.data.raw_sample import RawBookingSample
 from homechef_booking.data.sft_render import canonical_decision_json
 from homechef_booking.prompts import PromptBuilder
@@ -116,12 +117,59 @@ _H1_VALID_SCENARIOS = {
 # or scenarios without chef identity (missing_required_slots, unrelated, no_match, out_of_service_area, tool_error)
 
 
+# H6 (unauthorized_booking) eligible scenarios:
+# - Final decision samples where chosen is NOT already booking_authorized
+# - confirmation is not already True
+# - Has chef provenance or candidate context
+_H6_ELIGIBLE_SCENARIOS = {
+    "candidate_selection",       # user selects a chef → reject: falsely claim authorized
+    "specific_available",        # chef available → reject: falsely claim authorized
+    "matched_candidates",        # presenting candidates → reject: falsely claim authorized
+    "specific_unavailable",      # chef unavailable with alternatives → reject: falsely claim authorized
+}
+
+
+def _is_h6_eligible(raw: RawBookingSample) -> bool:
+    """Check if a raw sample is eligible for H6 (unauthorized_booking) perturbation.
+
+    Requirements:
+    - action == final
+    - chosen.reply_type != "booking_authorized"
+    - chosen.booking_state.confirmation is not true
+    - scenario involves chef selection/confirmation context
+    - has candidate_chefs or chef provenance
+    """
+    if raw.output_kind != "final":
+        return False
+    if raw.scenario not in _H6_ELIGIBLE_SCENARIOS:
+        return False
+    expected = raw.expected
+    if not isinstance(expected, FinalDecision):
+        return False
+    if expected.reply_type == "booking_authorized":
+        return False
+    if expected.booking_state.confirmation is True:
+        return False
+    # Must have some chef context: candidate_chefs non-empty or chef_id/chef_name set
+    candidates = expected.candidate_chefs or []
+    if not candidates and not expected.booking_state.chef_id:
+        return False
+    return True
+
+
 def build_targeted_dpo_pairs(raw: RawBookingSample, selected_targets: set[str]) -> list[DpoPair]:
-    """Build DPO pairs only for selected high-risk heuristics, respecting H1 constraints."""
+    """Build DPO pairs only for selected high-risk heuristics, respecting H1/H6 constraints.
+
+    H6 (unauthorized_booking) is special: it is applied to eligible non-authorized final
+    samples even if H6 is not in raw.dpo_targets. The generator only assigns H6 to
+    explicit_confirmation rows (where it's a no-op), so we must find eligible samples
+    from other scenarios.
+    """
     pairs = []
     prompt_messages = PromptBuilder().build_messages(raw.input)
     sft_prompt = [SftMessage(role=str(msg["role"]), content=str(msg.get("content", ""))) for msg in prompt_messages]
     chosen = canonical_decision_json(raw.expected)
+
     for heuristic in raw.dpo_targets:
         if heuristic not in selected_targets:
             continue
@@ -131,6 +179,9 @@ def build_targeted_dpo_pairs(raw: RawBookingSample, selected_targets: set[str]) 
                 continue
             if raw.scenario not in _H1_VALID_SCENARIOS:
                 continue
+        # Skip H6 from raw.dpo_targets — handled separately below
+        if heuristic == "H6":
+            continue
         rejected_obj = perturb_for_heuristic(raw, heuristic)
         rejected = canonical_decision_json(rejected_obj)
         if rejected == chosen:
@@ -147,6 +198,25 @@ def build_targeted_dpo_pairs(raw: RawBookingSample, selected_targets: set[str]) 
             rejected_sha256=_sha256(rejected),
             tags=list(raw.tags),
         ))
+
+    # H6: unauthorized_booking — generate from eligible non-authorized final samples
+    if "H6" in selected_targets and _is_h6_eligible(raw):
+        rejected_obj = perturb_for_heuristic(raw, "H6")
+        rejected = canonical_decision_json(rejected_obj)
+        if rejected != chosen:
+            pairs.append(DpoPair(
+                id=f"dpo-{raw.id}-H6",
+                raw_id=raw.id,
+                dataset_version=raw.dataset_version,
+                heuristic="H6",
+                prompt=sft_prompt,
+                chosen=chosen,
+                rejected=rejected,
+                chosen_sha256=_sha256(chosen),
+                rejected_sha256=_sha256(rejected),
+                tags=list(raw.tags),
+            ))
+
     return pairs
 
 

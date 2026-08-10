@@ -1,6 +1,6 @@
 {
   "contract_id": "homechef-booking-v1",
-  "created_at": "2026-08-10T06:45:41.270293+00:00",
+  "created_at": "2026-08-10T07:45:31.146001+00:00",
   "dataset_version": "phase03_v0.1",
   "dense_dpo_v0_1_preserved": true,
   "diagnostic_dev_overlap": 0,
@@ -10,11 +10,11 @@
   "dpo_policy_exclusions": "H2 (action type swap — structural, not business safety). tool_error_booking_paused is not covered by current targeted DPO v0.1.",
   "dpo_train_count": 216,
   "dpo_train_path": "data\\processed\\phase03_dpo_targeted_v0.1_train.jsonl",
-  "dpo_train_sha256": "4f21ed64e1507d6066d8c5f9022e5ab9e38c03e7646e710150d34eb4d2ca6519",
+  "dpo_train_sha256": "21d4251f0811a167a66fe0f15ad62c1fcdb3e1498b93288f4e5625b69d16eaab",
   "dpo_train_val_overlap_by_hash": 0,
   "dpo_val_count": 24,
   "dpo_val_path": "data\\processed\\phase03_dpo_targeted_v0.1_val.jsonl",
-  "dpo_val_sha256": "515cba69c47ba24b330968a3c3ec805351a6e40c0e0b1e65cbda0c349b958357",
+  "dpo_val_sha256": "cfd1200f327899f55a81c0b3ab26093bbcb99683da4d62b29cf6c0235d9ecbe9",
   "frozen_eval_overlap": 0,
   "manifest_type": "targeted_dpo",
   "min_per_target": 25,
@@ -23,11 +23,12 @@
   "raw_sha256": "efb6e6dfc8e6753bdf15b90b8e9c66d3ea99d63991e60f975600fe3c776b73c5",
   "seed": 3001,
   "target_distribution": {
-    "H1": 58,
-    "H3": 45,
-    "H4": 53,
-    "H5": 39,
-    "H7": 45
+    "H1": 41,
+    "H3": 35,
+    "H4": 40,
+    "H5": 33,
+    "H6": 58,
+    "H7": 33
   },
   "total_pairs": 240
 }
