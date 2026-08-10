@@ -1,13 +1,16 @@
-"""Phase 04 Task 3 Amendment 2 — Training dry-run script.
+"""Phase 04 Task 3 Amendment 3 — Training dry-run script.
 
 Refuses to run without --approval-file (Checkpoint B gate).
 After approval, executes a real LLaMA-Factory engineering dry-run:
 - SFT: 1 row, max_steps=2
 - DPO: 1 pair, max_steps=2, pref_beta=0.1, pref_loss=sigmoid
 
+Temp datasets go under experiments/phase04/dryrun/.
+DPO pairs are converted to LLaMA-Factory 0.9.5 standard format.
+
 Usage (after Checkpoint B approval):
-  uv run python scripts/train/dryrun.py --stage sft --config configs/training/phase04_sft_qwen3_0_6b.yaml --sample-count 1 --max-steps 2 --approval-file project-log/phase04_dryrun_approval.json
-  uv run python scripts/train/dryrun.py --stage dpo --config configs/training/phase04_dpo_dryrun_beta_0_1.yaml --sample-count 1 --max-steps 2 --approval-file project-log/phase04_dryrun_approval.json
+  python scripts/train/dryrun.py --stage sft --config configs/training/phase04_sft_qwen3_0_6b.yaml --sample-count 1 --max-steps 2 --approval-file project-log/phase04_dryrun_approval.json
+  python scripts/train/dryrun.py --stage dpo --config configs/training/phase04_dpo_dryrun_beta_0_1.yaml --sample-count 1 --max-steps 2 --approval-file project-log/phase04_dryrun_approval.json
 """
 
 import argparse
@@ -26,6 +29,9 @@ from homechef_booking.training.dataset_adapter import validate_dpo_for_training,
 DRYRUN_BASE = Path("experiments/phase04/dryrun")
 MANIFEST_PATH = Path("project-log/phase04_dryrun_manifest.json")
 
+# Temp datasets go under data/ because LLaMA-Factory resolves file_name relative to
+# dataset_dir=data/ and cannot handle non-ASCII paths. They are clearly named
+# phase04_dryrun_* to distinguish from permanent datasets.
 SFT_TEMP_DATASET = Path("data") / "phase04_dryrun_sft_1row.jsonl"
 SFT_TEMP_CONFIG = DRYRUN_BASE / "phase04_dryrun_sft_1row.yaml"
 SFT_OUTPUT_DIR = DRYRUN_BASE / "sft_0_6b"
@@ -53,40 +59,134 @@ def _validate_approval(approval_path: Path) -> dict:
     return approval
 
 
-def _create_dryrun_dataset(source_path: Path, count: int, output_path: Path, label: str) -> Path:
-    """Copy the first `count` rows from a JSONL dataset into a temp file."""
+def _convert_dpo_pair_to_llamafactory_format(pair: dict) -> dict:
+    """Convert a DPO pair to LLaMA-Factory 0.9.5 compatible ShareGPT ranking format.
+
+    LLaMA-Factory's SharegptDatasetConverter enforces strict alternating tags
+    (user/observation on odd positions, assistant/function_call on even positions).
+    Multi-turn conversations with tool calls violate this pattern.
+
+    For the engineering dry-run, we serialize the full prompt context into a single
+    user message, producing a clean single-turn shape:
+
+    {
+      "conversations": [{"from": "user", "value": "<serialized prompt>"}],
+      "chosen": {"from": "assistant", "value": "<chosen JSON>"},
+      "rejected": {"from": "assistant", "value": "<rejected JSON>"}
+    }
+    """
+    prompt = pair.get("prompt", [])
+
+    # Serialize the full prompt context into one user message
+    serialized_prompt = json.dumps(prompt, ensure_ascii=False)
+    conversations = [{"from": "user", "value": serialized_prompt}]
+
+    chosen_raw = pair.get("chosen", "")
+    rejected_raw = pair.get("rejected", "")
+
+    return {
+        "conversations": conversations,
+        "chosen": {"from": "assistant", "value": chosen_raw},
+        "rejected": {"from": "assistant", "value": rejected_raw},
+    }
+
+
+def _create_dpo_dryrun_dataset(source_path: Path, count: int) -> Path:
+    """Copy the first DPO pair, convert to LLaMA-Factory format, write to temp file.
+
+    Also updates data/dataset_info.json with the absolute path to the temp file
+    so LLaMA-Factory can find it.
+    """
+    lines = source_path.read_text(encoding="utf-8").splitlines()
+    first_row = json.loads(lines[0].strip())
+    converted = _convert_dpo_pair_to_llamafactory_format(first_row)
+    DPO_TEMP_DATASET.parent.mkdir(parents=True, exist_ok=True)
+    DPO_TEMP_DATASET.write_text(json.dumps(converted, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"  Temporary DPO dataset: {DPO_TEMP_DATASET} (1 pair, LLaMA-Factory format)")
+
+    # Register in dataset_info.json with relative path from data/
+    _register_temp_dataset("phase04_dryrun_dpo_1pair", DPO_TEMP_DATASET, is_dpo=True)
+
+    return DPO_TEMP_DATASET
+
+
+def _create_sft_dryrun_dataset(source_path: Path, count: int) -> Path:
+    """Copy the first `count` rows from the SFT train dataset into a temp file.
+
+    Also updates data/dataset_info.json with the absolute path.
+    """
     lines = source_path.read_text(encoding="utf-8").splitlines()
     first_row = lines[0].strip()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(first_row + "\n", encoding="utf-8")
-    print(f"  Temporary {label} dataset: {output_path} (1 row/pair)")
-    return output_path
+    SFT_TEMP_DATASET.parent.mkdir(parents=True, exist_ok=True)
+    SFT_TEMP_DATASET.write_text(first_row + "\n", encoding="utf-8")
+    print(f"  Temporary SFT dataset: {SFT_TEMP_DATASET} (1 row)")
+
+    _register_temp_dataset("phase04_dryrun_sft_1row", SFT_TEMP_DATASET, is_dpo=False)
+
+    return SFT_TEMP_DATASET
+
+
+def _register_temp_dataset(name: str, temp_path: Path, is_dpo: bool) -> None:
+    """Register a temp dry-run dataset in data/dataset_info.json.
+
+    Uses a relative path from data/ since LLaMA-Factory resolves file_name
+    relative to dataset_dir (data/). The temp file must be under data/ to
+    avoid non-ASCII path encoding issues with LLaMA-Factory.
+    """
+    info_path = Path("data/dataset_info.json")
+    info = json.loads(info_path.read_text(encoding="utf-8")) if info_path.exists() else {}
+
+    # Use relative path from data/ — temp file is directly under data/
+    relative_path = temp_path.name
+
+    entry: dict = {
+        "file_name": relative_path,
+        "formatting": "sharegpt",
+    }
+
+    if is_dpo:
+        entry.update({
+            "ranking": True,
+            "columns": {
+                "messages": "conversations",
+                "chosen": "chosen",
+                "rejected": "rejected",
+            },
+            "tags": {
+                "role_tag": "from",
+                "content_tag": "value",
+                "user_tag": "user",
+                "assistant_tag": "assistant",
+            },
+        })
+    else:
+        entry.update({
+            "columns": {"messages": "messages"},
+            "tags": {
+                "role_tag": "role",
+                "content_tag": "content",
+                "user_tag": "user",
+                "assistant_tag": "assistant",
+                "system_tag": "system",
+            },
+        })
+
+    info[name] = entry
+    info_path.write_text(json.dumps(info, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def _generate_dryrun_config(
     source_config: Path,
     output_path: Path,
-    temp_dataset: Path,
     output_dir: Path,
     stage: str,
     extra_overrides: dict | None = None,
 ) -> Path:
-    """Generate a temporary dry-run YAML config.
-
-    Copies all SPEC fields from the source config and overrides:
-    - train/eval dataset paths → temporary file
-    - max_steps: 2
-    - num_train_epochs: 1
-    - save_total_limit: 1
-    - output_dir
-    - engineering_dryrun_only: true
-    - per_device_train/eval_batch_size: 1
-    """
+    """Generate a temporary dry-run YAML config."""
     raw = yaml.safe_load(source_config.read_text(encoding="utf-8"))
     if raw is None:
         raw = {}
 
-    # Map to LLaMA-Factory field names (dataset/eval_dataset, not train_dataset_path/eval_dataset_path)
     raw.pop("train_dataset_path", None)
     raw.pop("eval_dataset_path", None)
     if stage == "dpo":
@@ -101,14 +201,12 @@ def _generate_dryrun_config(
     raw["output_dir"] = str(output_dir)
     raw["per_device_train_batch_size"] = 1
     raw["per_device_eval_batch_size"] = 1
-    # CPU-only environment: disable bf16, enable use_cpu
     raw["bf16"] = False
     raw["use_cpu"] = True
 
     if extra_overrides:
         raw.update(extra_overrides)
 
-    # Remove fields not recognized by LLaMA-Factory
     for field in ("sample_count", "approval_required", "engineering_dryrun_only",
                   "mask_history", "train_on_prompt", "enable_thinking", "fp16"):
         raw.pop(field, None)
@@ -122,12 +220,7 @@ def _generate_dryrun_config(
 
 
 def _run_llamafactory_train(config_path: Path) -> tuple[int, str, str]:
-    """Invoke llamafactory-cli train with the given config.
-
-    Returns (exit_code, stdout, stderr).
-    Uses sys.executable to find the correct venv, then locates llamafactory-cli
-    in the same Scripts directory.
-    """
+    """Invoke llamafactory-cli train with the given config."""
     scripts_dir = Path(sys.executable).parent
     cli_path = scripts_dir / "llamafactory-cli.exe"
     if not cli_path.exists():
@@ -139,7 +232,6 @@ def _run_llamafactory_train(config_path: Path) -> tuple[int, str, str]:
     cmd = [str(cli_path), "train", str(config_path)]
     print(f"  Running: {' '.join(cmd)}")
     result = subprocess.run(cmd, capture_output=True, text=True)
-    # Write full stderr to a log file for debugging
     log_path = DRYRUN_BASE / "llamafactory_stderr.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     if result.stderr:
@@ -147,61 +239,79 @@ def _run_llamafactory_train(config_path: Path) -> tuple[int, str, str]:
     return result.returncode, result.stdout, result.stderr
 
 
-def _write_dryrun_manifest(
-    sft_passed: bool,
-    dpo_passed: bool,
-    sft_sample_count: int,
-    sft_max_steps: int,
-    dpo_pair_count: int,
-    dpo_max_steps: int,
-    approval_file: str,
-    sft_config: str,
-    dpo_config: str,
-    sft_train_dataset: str,
-    sft_eval_dataset: str,
-    dpo_train_dataset: str,
-    dpo_eval_dataset: str,
-    sft_stdout: str = "",
-    sft_stderr: str = "",
-    dpo_stdout: str = "",
-    dpo_stderr: str = "",
-) -> dict:
-    """Write the dry-run manifest to project-log/phase04_dryrun_manifest.json."""
-    manifest = {
-        "sft_passed": sft_passed,
-        "dpo_passed": dpo_passed,
-        "sft_sample_count": sft_sample_count,
-        "dpo_pair_count": dpo_pair_count,
-        "sft_max_steps": sft_max_steps,
-        "dpo_max_steps": dpo_max_steps,
+def _load_existing_manifest() -> dict:
+    """Load existing manifest if present, otherwise return empty base dict."""
+    if MANIFEST_PATH.exists():
+        try:
+            return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {
         "checkpoint_b_approved": True,
-        "approval_file": approval_file,
-        "sft_config": sft_config,
-        "dpo_config": dpo_config,
-        "sft_temp_dataset": str(SFT_TEMP_DATASET),
-        "sft_temp_config": str(SFT_TEMP_CONFIG),
-        "sft_output_dir": str(SFT_OUTPUT_DIR),
-        "dpo_temp_dataset": str(DPO_TEMP_DATASET),
-        "dpo_temp_config": str(DPO_TEMP_CONFIG),
-        "dpo_output_dir": str(DPO_OUTPUT_DIR),
-        "sft_train_dataset": sft_train_dataset,
-        "sft_eval_dataset": sft_eval_dataset,
-        "dpo_train_dataset": dpo_train_dataset,
-        "dpo_eval_dataset": dpo_eval_dataset,
         "frozen_test_used_for_training": False,
         "diagnostic_dev_used_for_training": False,
         "phase02_output_used_for_training": False,
         "no_training_effectiveness_claim": True,
-        "created_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def _update_sft_manifest(
+    sft_passed: bool,
+    sft_sample_count: int,
+    sft_max_steps: int,
+    approval_file: str,
+    sft_config: str,
+    sft_train_dataset: str,
+    sft_eval_dataset: str,
+) -> dict:
+    """Update SFT fields in the dry-run manifest, preserving DPO fields."""
+    manifest = _load_existing_manifest()
+    manifest["sft_passed"] = sft_passed
+    manifest["sft_sample_count"] = sft_sample_count
+    manifest["sft_max_steps"] = sft_max_steps
+    manifest["approval_file"] = approval_file
+    manifest["sft_config"] = sft_config
+    manifest["sft_temp_dataset"] = str(SFT_TEMP_DATASET)
+    manifest["sft_temp_config"] = str(SFT_TEMP_CONFIG)
+    manifest["sft_output_dir"] = str(SFT_OUTPUT_DIR)
+    manifest["sft_train_dataset"] = sft_train_dataset
+    manifest["sft_eval_dataset"] = sft_eval_dataset
+    manifest["created_at"] = datetime.now(timezone.utc).isoformat()
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"\nDry-run manifest written to {MANIFEST_PATH}")
+    print(f"\nDry-run manifest updated (SFT) -> {MANIFEST_PATH}")
+    return manifest
+
+
+def _update_dpo_manifest(
+    dpo_passed: bool,
+    dpo_pair_count: int,
+    dpo_max_steps: int,
+    approval_file: str,
+    dpo_config: str,
+    dpo_train_dataset: str,
+    dpo_eval_dataset: str,
+) -> dict:
+    """Update DPO fields in the dry-run manifest, preserving SFT fields."""
+    manifest = _load_existing_manifest()
+    manifest["dpo_passed"] = dpo_passed
+    manifest["dpo_pair_count"] = dpo_pair_count
+    manifest["dpo_max_steps"] = dpo_max_steps
+    manifest["approval_file"] = approval_file
+    manifest["dpo_config"] = dpo_config
+    manifest["dpo_temp_dataset"] = str(DPO_TEMP_DATASET)
+    manifest["dpo_temp_config"] = str(DPO_TEMP_CONFIG)
+    manifest["dpo_output_dir"] = str(DPO_OUTPUT_DIR)
+    manifest["dpo_train_dataset"] = dpo_train_dataset
+    manifest["dpo_eval_dataset"] = dpo_eval_dataset
+    manifest["created_at"] = datetime.now(timezone.utc).isoformat()
+    MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"\nDry-run manifest updated (DPO) -> {MANIFEST_PATH}")
     return manifest
 
 
 def _run_sft_dryrun(config_path: Path, spec, approval_file: str, sample_count: int, max_steps: int) -> None:
-    """Execute SFT dry-run: create temp dataset, config, invoke LLaMA-Factory."""
     print(f"\nPreparing SFT dry-run:")
     print(f"  sample_count: {sample_count}")
     print(f"  max_steps: {max_steps}")
@@ -211,42 +321,27 @@ def _run_sft_dryrun(config_path: Path, spec, approval_file: str, sample_count: i
         print("ERROR: No train dataset path in config.")
         sys.exit(1)
 
-    _create_dryrun_dataset(sft_train, sample_count, SFT_TEMP_DATASET, "SFT")
-    _generate_dryrun_config(config_path, SFT_TEMP_CONFIG, SFT_TEMP_DATASET, SFT_OUTPUT_DIR, "sft")
+    _create_sft_dryrun_dataset(sft_train, sample_count)
+    _generate_dryrun_config(config_path, SFT_TEMP_CONFIG, SFT_OUTPUT_DIR, "sft")
     exit_code, stdout, stderr = _run_llamafactory_train(SFT_TEMP_CONFIG)
 
     sft_passed = exit_code == 0
-    if sft_passed:
-        print(f"\nSFT dry-run PASSED.")
-    else:
-        print(f"\nSFT dry-run FAILED (exit code: {exit_code}).")
-        if stderr:
-            print(f"  stderr: {stderr[:2000]}")
+    print(f"\nSFT dry-run {'PASSED' if sft_passed else f'FAILED (exit code: {exit_code})'}.")
 
-    _write_dryrun_manifest(
+    _update_sft_manifest(
         sft_passed=sft_passed,
-        dpo_passed=False,
         sft_sample_count=sample_count,
         sft_max_steps=max_steps,
-        dpo_pair_count=0,
-        dpo_max_steps=0,
         approval_file=approval_file,
         sft_config=str(config_path),
-        dpo_config="configs/training/phase04_dpo_dryrun_beta_0_1.yaml",
         sft_train_dataset=str(sft_train),
         sft_eval_dataset=str(spec.eval_dataset_path) if spec.eval_dataset_path else "",
-        dpo_train_dataset="data/processed/phase03_dpo_targeted_v0.1_train.jsonl",
-        dpo_eval_dataset="data/processed/phase03_dpo_targeted_v0.1_val.jsonl",
-        sft_stdout=stdout,
-        sft_stderr=stderr,
     )
-
     if not sft_passed:
         sys.exit(exit_code)
 
 
 def _run_dpo_dryrun(config_path: Path, spec, approval_file: str, sample_count: int, max_steps: int) -> None:
-    """Execute DPO dry-run: create temp dataset, config, invoke LLaMA-Factory."""
     print(f"\nPreparing DPO dry-run:")
     print(f"  pair_count: {sample_count}")
     print(f"  max_steps: {max_steps}")
@@ -256,43 +351,25 @@ def _run_dpo_dryrun(config_path: Path, spec, approval_file: str, sample_count: i
         print("ERROR: No train dataset path in config.")
         sys.exit(1)
 
-    _create_dryrun_dataset(dpo_train, sample_count, DPO_TEMP_DATASET, "DPO")
+    _create_dpo_dryrun_dataset(dpo_train, sample_count)
     _generate_dryrun_config(
-        config_path,
-        DPO_TEMP_CONFIG,
-        DPO_TEMP_DATASET,
-        DPO_OUTPUT_DIR,
-        "dpo",
+        config_path, DPO_TEMP_CONFIG, DPO_OUTPUT_DIR, "dpo",
         extra_overrides={"pref_beta": 0.1, "pref_loss": "sigmoid"},
     )
     exit_code, stdout, stderr = _run_llamafactory_train(DPO_TEMP_CONFIG)
 
     dpo_passed = exit_code == 0
-    if dpo_passed:
-        print(f"\nDPO dry-run PASSED.")
-    else:
-        print(f"\nDPO dry-run FAILED (exit code: {exit_code}).")
-        if stderr:
-            print(f"  stderr: {stderr[:2000]}")
+    print(f"\nDPO dry-run {'PASSED' if dpo_passed else f'FAILED (exit code: {exit_code})'}.")
 
-    _write_dryrun_manifest(
-        sft_passed=False,
+    _update_dpo_manifest(
         dpo_passed=dpo_passed,
-        sft_sample_count=0,
-        sft_max_steps=0,
         dpo_pair_count=sample_count,
         dpo_max_steps=max_steps,
         approval_file=approval_file,
-        sft_config="configs/training/phase04_sft_qwen3_0_6b.yaml",
         dpo_config=str(config_path),
-        sft_train_dataset="data/processed/phase03_sft_v0.1_train.jsonl",
-        sft_eval_dataset="data/processed/phase03_sft_v0.1_val.jsonl",
         dpo_train_dataset=str(dpo_train),
         dpo_eval_dataset=str(spec.eval_dataset_path) if spec.eval_dataset_path else "",
-        dpo_stdout=stdout,
-        dpo_stderr=stderr,
     )
-
     if not dpo_passed:
         sys.exit(exit_code)
 
@@ -307,15 +384,12 @@ def main() -> None:
                         help="Path to Checkpoint B approval JSON (required to proceed)")
     args = parser.parse_args()
 
-    # ── Gate 1: Approval file ──
     if not args.approval_file:
         print("ERROR: --approval-file is required. Checkpoint B is not approved.")
-        print("  Dry-run cannot execute without approval.")
         sys.exit(1)
 
     approval = _validate_approval(Path(args.approval_file))
 
-    # ── Gate 2: Source config ──
     config_path = Path(args.config)
     if not config_path.exists():
         print(f"ERROR: Config file not found: {args.config}")
@@ -333,7 +407,6 @@ def main() -> None:
     print(f"  Train dataset: {spec.train_dataset_path}")
     print(f"  Eval dataset: {spec.eval_dataset_path}")
 
-    # ── Gate 3: Validate source datasets ──
     if args.stage == "dpo":
         if spec.train_dataset_path:
             train_report = validate_dpo_for_training(spec.train_dataset_path, expected_count=216)
@@ -369,7 +442,6 @@ def main() -> None:
                 sys.exit(1)
             print(f"  Eval dataset OK: {eval_report.total_rows} rows")
 
-    # ── Execute dry-run ──
     if args.stage == "dpo":
         _run_dpo_dryrun(config_path, spec, args.approval_file, args.sample_count, args.max_steps)
     else:

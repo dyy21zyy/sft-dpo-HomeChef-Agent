@@ -4,7 +4,12 @@
     "formatting": "sharegpt",
     "columns": {
       "messages": "messages"
-    }
+    },
+    "role_tag": "role",
+    "content_tag": "content",
+    "user_tag": "user",
+    "assistant_tag": "assistant",
+    "system_tag": "system"
   },
   "homechef_phase03_dpo_targeted_v0_1": {
     "file_name": "data/processed/phase03_dpo_targeted_v0.1_train.jsonl",
@@ -14,6 +19,11 @@
       "prompt": "prompt",
       "chosen": "chosen",
       "rejected": "rejected"
-    }
+    },
+    "role_tag": "role",
+    "content_tag": "content",
+    "user_tag": "user",
+    "assistant_tag": "assistant",
+    "system_tag": "system"
   }
 }
