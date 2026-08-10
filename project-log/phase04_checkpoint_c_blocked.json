@@ -1,0 +1,31 @@
+{
+  "checkpoint": "C",
+  "status": "runtime-blocked",
+  "blocked_at": "2026-08-10T20:00:00+08:00",
+  "reason": "No NVIDIA GPU available on local machine. PyTorch is CPU-only (2.13.0+cpu). GPU required for SFT fine-tuning of Qwen3-0.6B-Base and Qwen3-1.7B-Base.",
+  "local_environment": {
+    "os": "Windows (win32)",
+    "python_version": "3.12.13",
+    "pytorch_version": "2.13.0+cpu",
+    "cuda_available": false,
+    "gpu_hardware": "AMD Radeon (TM) 780M Graphics (integrated, no CUDA support)",
+    "nvidia_smi_available": false,
+    "llamafactory_version": "0.9.5",
+    "git_commit": "54c1374"
+  },
+  "gpu_package_prepared": true,
+  "gpu_package_path": "project-log/phase04_gpu_transfer_package.md",
+  "allowed_actions_on_local": [
+    "Record this blocked note",
+    "Prepare GPU transfer package",
+    "Do NOT run formal SFT locally",
+    "Do NOT attempt CPU-only formal SFT",
+    "Do NOT attempt ROCm / AMD integrated GPU workaround"
+  ],
+  "required_gpu_host": {
+    "python": "3.12.x",
+    "gpu": "NVIDIA GPU, preferably RTX 4090 24GB or equivalent",
+    "cuda_available": true,
+    "dependencies": "install from requirements-train.txt"
+  }
+}
