@@ -97,6 +97,8 @@ class TrainingRunSpec(BaseModel):
     # ── DPO-specific (not validated yet — requires SFT approval) ──
     adapter_name_or_path: Path | None = Field(default=None)
     pref_beta: float | None = Field(default=None)
+    pref_loss: str | None = Field(default=None)
+    pref_ftx: float | None = Field(default=None)
     dpo_loss: str | None = Field(default=None)
     dpo_ftx: float | None = Field(default=None)
 

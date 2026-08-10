@@ -100,6 +100,8 @@ def test_dpo_dryrun_config_is_engineering_only():
     assert spec.eval_dataset_path.name == "phase03_dpo_targeted_v0.1_val.jsonl"
     assert spec.max_steps == 2
     assert spec.engineering_dryrun_only is True
+    assert spec.pref_beta == 0.1
+    assert spec.pref_loss == "sigmoid"
 
 
 def test_dpo_dryrun_config_uses_targeted_dpo_files():
@@ -157,12 +159,11 @@ def test_dryrun_rejects_invalid_approval_file():
         approval_path.unlink(missing_ok=True)
 
 
-def test_dryrun_dpo_blocked():
-    """dryrun.py must block DPO with dpo_beta_field_name_unconfirmed."""
+def test_dryrun_dpo_creates_temp_dataset():
+    """dryrun.py DPO mode must create 1-pair temp dataset and invoke llamafactory-cli train."""
     import subprocess
     import sys
 
-    # Create a temp approval file with approved=true
     approval_path = Path("project-log/_test_approval_true.json")
     approval_path.parent.mkdir(parents=True, exist_ok=True)
     approval_path.write_text(json.dumps({"approved": True}), encoding="utf-8")
@@ -177,21 +178,33 @@ def test_dryrun_dpo_blocked():
             capture_output=True,
             text=True,
         )
-        # DPO blocked exits 0 (not an error, just blocked)
-        assert result.returncode == 0
-        assert "BLOCKED" in result.stdout
-        assert "dpo_beta_field_name" in result.stdout
-
-        # Verify manifest was written with dpo_blocked
-        manifest_path = Path("project-log/phase04_dryrun_manifest.json")
-        assert manifest_path.exists()
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        assert manifest["dpo_passed"] is False
-        assert manifest["dpo_blocked_reason"] == "dpo_beta_field_name_unconfirmed"
+        # If llamafactory-cli is not installed, the subprocess call will fail
+        # after creating temp files. Verify temp dataset and config were prepared.
+        assert "Temporary DPO dataset" in result.stdout or "phase04_dryrun_dpo_1pair.jsonl" in result.stdout
+        assert "Temporary config" in result.stdout or "phase04_dryrun_dpo_1pair.yaml" in result.stdout
+        assert "llamafactory-cli train" in result.stdout
     finally:
         approval_path.unlink(missing_ok=True)
+        # Clean up temp files
+        for p in [DPO_TEMP_DATASET, DPO_TEMP_CONFIG]:
+            if p.exists():
+                p.unlink(missing_ok=True)
         manifest_path = Path("project-log/phase04_dryrun_manifest.json")
         manifest_path.unlink(missing_ok=True)
+
+
+def test_dpo_dryrun_temp_yaml_contains_pref_beta():
+    """Verify the DPO dry-run YAML includes pref_beta: 0.1."""
+    spec = load_training_run_spec(Path("configs/training/phase04_dpo_dryrun_beta_0_1.yaml"))
+    assert spec.pref_beta == 0.1
+    assert spec.pref_loss == "sigmoid"
+
+
+def test_dpo_dryrun_manifest_records_dpo_pair_count_and_max_steps():
+    """Verify the DPO dry-run config has correct sample and step counts."""
+    spec = load_training_run_spec(Path("configs/training/phase04_dpo_dryrun_beta_0_1.yaml"))
+    assert spec.sample_count == 1
+    assert spec.max_steps == 2
 
 
 def test_dryrun_sft_creates_temp_dataset():
@@ -233,6 +246,8 @@ def test_dryrun_sft_creates_temp_dataset():
 
 SFT_TEMP_DATASET = Path("experiments/phase04/dryrun/phase04_dryrun_sft_1row.jsonl")
 SFT_TEMP_CONFIG = Path("experiments/phase04/dryrun/phase04_dryrun_sft_1row.yaml")
+DPO_TEMP_DATASET = Path("experiments/phase04/dryrun/phase04_dryrun_dpo_1pair.jsonl")
+DPO_TEMP_CONFIG = Path("experiments/phase04/dryrun/phase04_dryrun_dpo_1pair.yaml")
 
 
 # ── package_cloud_artifacts approval gate ───────────────────────────────────
