@@ -157,16 +157,17 @@ def generate_smoke_raw(output_path: Path, count: int = 25, seed: int = 3001) -> 
                 "arguments": {k: v for k, v in bs.items() if k in {"chef_name", "service_date", "start_time", "people", "address", "cuisine", "budget_min", "budget_max", "menu", "ingredient_purchase", "dietary_constraints", "occasion"}},
             }
         else:
+            is_unrelated = scenario == "unrelated"
             exp = {
                 "action": "final",
                 "booking_state": bs,
                 "chef_query_status": "not_checked",
                 "candidate_chefs": [],
                 "info_complete": False,
-                "unrelated": scenario == "unrelated",
-                "missing_info": ["service_date"],
-                "reply_type": "ask_service_date",
-                "reply": "请提供服务日期",
+                "unrelated": is_unrelated,
+                "missing_info": ["service_date", "start_time", "people", "address"],
+                "reply_type": "handoff" if is_unrelated else "ask_multiple_required_fields",
+                "reply": "请补充用餐日期、开始时间、人数和服务地址。",
             }
         lines.append(json.dumps({
             "id": sid, "dataset_version": "phase03_v0.1", "contract_id": "homechef-booking-v1",
@@ -179,7 +180,7 @@ def generate_smoke_raw(output_path: Path, count: int = 25, seed: int = 3001) -> 
                 "generated_at": "2026-08-10T00:00:00Z",
             },
             "review": {"status": "machine_validated", "reviewer": None, "notes": []},
-            "dpo_targets": [],
+            "dpo_targets": rng.sample(["H1", "H2", "H3", "H4", "H5", "H6", "H7"], rng.randint(1, 2)) if rng.random() > 0.3 else [],
         }, ensure_ascii=False, sort_keys=True))
 
     output_path.parent.mkdir(parents=True, exist_ok=True)

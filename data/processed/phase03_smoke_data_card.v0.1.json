@@ -1,0 +1,13 @@
+{
+  "contract_id": "homechef-booking-v1",
+  "created_at": "2026-08-10T04:32:38.440982+00:00",
+  "dataset_version": "phase03_v0.1",
+  "diagnostic_dev_overlap": 0,
+  "frozen_eval_overlap": 0,
+  "known_invalid_phase02_output": "0.6B Frozen missing_mock_prediction is invalid for acceptance and not used",
+  "no_frozen_test_training_use": true,
+  "no_real_user_logs": true,
+  "phase": "03",
+  "phase02_base_benchmark_dependency": "not_used_for_training",
+  "raw_is_fact_source": true
+}
