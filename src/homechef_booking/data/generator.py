@@ -203,7 +203,9 @@ def generate_smoke_raw(output_path: Path, count: int = 25, seed: int = 3001) -> 
         "missing_required_slots",   # 24
         "valid_search_tool_call",   # 25
     ]
-    scenario_plan = scenario_plan[:count]
+    # Cycle the 25-scenario plan to reach the requested count
+    while len(scenario_plan) < count:
+        scenario_plan.extend(scenario_plan[: min(len(scenario_plan), count - len(scenario_plan))])
 
     lines = []
     for i in range(1, count + 1):
@@ -213,6 +215,7 @@ def generate_smoke_raw(output_path: Path, count: int = 25, seed: int = 3001) -> 
 
         if scenario == "missing_required_slots":
             # Single-turn: user provides some info but genuinely missing required slots
+            # Use i-based unique combo: 8 cuisines × 5 dietary × 4 occasions = 160 > ~96 rows
             user_inputs = [
                 "想约一个家宴，麻烦帮我安排",
                 "帮我预约私厨",
@@ -221,9 +224,10 @@ def generate_smoke_raw(output_path: Path, count: int = 25, seed: int = 3001) -> 
             ]
             user_input = user_inputs[(i - 1) % len(user_inputs)]
             bs = _empty_booking()
-            bs["cuisine"] = rng.choice(cuisines) if i % 2 == 0 else None
-            bs["occasion"] = rng.choice(occasions)
-            bs["dietary_constraints"] = rng.choice(dietary_opts)
+            _unique_occasions = [None, "生日", "聚会", "商务宴请"]
+            bs["cuisine"] = cuisines[i % len(cuisines)]
+            bs["dietary_constraints"] = dietary_opts[i % len(dietary_opts)]
+            bs["occasion"] = _unique_occasions[i % len(_unique_occasions)]
             state = {"booking_state": bs, "chef_query_status": "not_checked",
                      "candidate_chefs": [], "awaiting_confirmation": False}
             inp = {"history": [], "current_state": state, "user_input": user_input,
