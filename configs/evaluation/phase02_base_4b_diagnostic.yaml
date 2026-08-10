@@ -5,7 +5,7 @@ manifest_path: data/dev/diagnostic_dev.manifest.json
 output_dir: reports/generated/phase02/base_4b/diagnostic_dev
 model_id: Qwen/Qwen3-4B-Base
 suite_id: phase02_diagnostic_dev_v1
-device: cpu
-torch_dtype: float32
+device: cuda
+torch_dtype: bfloat16
 notes: "Phase 02 M0: Qwen3-4B-Base on Diagnostic Dev (80 cases)"
 tags: ["base_benchmark", "4b", "diagnostic"]

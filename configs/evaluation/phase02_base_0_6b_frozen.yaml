@@ -5,7 +5,7 @@ manifest_path: data/eval/frozen_test.manifest.json
 output_dir: reports/generated/phase02/base_0_6b/frozen_test
 model_id: Qwen/Qwen3-0.6B-Base
 suite_id: phase02_frozen_test_v1
-device: cpu
-torch_dtype: float32
+device: cuda
+torch_dtype: bfloat16
 notes: "Phase 02 M0: Qwen3-0.6B-Base on Frozen Test (120 cases)"
 tags: ["base_benchmark", "0.6b", "frozen"]
