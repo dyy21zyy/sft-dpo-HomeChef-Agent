@@ -244,9 +244,9 @@ def test_dryrun_sft_creates_temp_dataset():
 
 # ── Temp path constants for cleanup ──
 
-SFT_TEMP_DATASET = Path("experiments/phase04/dryrun/phase04_dryrun_sft_1row.jsonl")
+SFT_TEMP_DATASET = Path("data/phase04_dryrun_sft_1row.jsonl")
 SFT_TEMP_CONFIG = Path("experiments/phase04/dryrun/phase04_dryrun_sft_1row.yaml")
-DPO_TEMP_DATASET = Path("experiments/phase04/dryrun/phase04_dryrun_dpo_1pair.jsonl")
+DPO_TEMP_DATASET = Path("data/phase04_dryrun_dpo_1pair.jsonl")
 DPO_TEMP_CONFIG = Path("experiments/phase04/dryrun/phase04_dryrun_dpo_1pair.yaml")
 
 

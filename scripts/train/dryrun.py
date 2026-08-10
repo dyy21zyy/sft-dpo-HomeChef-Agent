@@ -26,11 +26,11 @@ from homechef_booking.training.dataset_adapter import validate_dpo_for_training,
 DRYRUN_BASE = Path("experiments/phase04/dryrun")
 MANIFEST_PATH = Path("project-log/phase04_dryrun_manifest.json")
 
-SFT_TEMP_DATASET = DRYRUN_BASE / "phase04_dryrun_sft_1row.jsonl"
+SFT_TEMP_DATASET = Path("data") / "phase04_dryrun_sft_1row.jsonl"
 SFT_TEMP_CONFIG = DRYRUN_BASE / "phase04_dryrun_sft_1row.yaml"
 SFT_OUTPUT_DIR = DRYRUN_BASE / "sft_0_6b"
 
-DPO_TEMP_DATASET = DRYRUN_BASE / "phase04_dryrun_dpo_1pair.jsonl"
+DPO_TEMP_DATASET = Path("data") / "phase04_dryrun_dpo_1pair.jsonl"
 DPO_TEMP_CONFIG = DRYRUN_BASE / "phase04_dryrun_dpo_1pair.yaml"
 DPO_OUTPUT_DIR = DRYRUN_BASE / "dpo_0_6b"
 
@@ -86,22 +86,32 @@ def _generate_dryrun_config(
     if raw is None:
         raw = {}
 
-    raw["train_dataset_path"] = str(temp_dataset)
-    raw["eval_dataset_path"] = str(temp_dataset)
+    # Map to LLaMA-Factory field names (dataset/eval_dataset, not train_dataset_path/eval_dataset_path)
+    raw.pop("train_dataset_path", None)
+    raw.pop("eval_dataset_path", None)
+    if stage == "dpo":
+        raw["dataset"] = "phase04_dryrun_dpo_1pair"
+        raw["eval_dataset"] = "phase04_dryrun_dpo_1pair"
+    else:
+        raw["dataset"] = "phase04_dryrun_sft_1row"
+        raw["eval_dataset"] = "phase04_dryrun_sft_1row"
     raw["max_steps"] = 2
     raw["num_train_epochs"] = 1
     raw["save_total_limit"] = 1
     raw["output_dir"] = str(output_dir)
-    raw["engineering_dryrun_only"] = True
     raw["per_device_train_batch_size"] = 1
     raw["per_device_eval_batch_size"] = 1
+    # CPU-only environment: disable bf16, enable use_cpu
+    raw["bf16"] = False
+    raw["use_cpu"] = True
 
     if extra_overrides:
         raw.update(extra_overrides)
 
-    # Remove formal-only fields that conflict with dry-run
-    raw.pop("sample_count", None)
-    raw.pop("approval_required", None)
+    # Remove fields not recognized by LLaMA-Factory
+    for field in ("sample_count", "approval_required", "engineering_dryrun_only",
+                  "mask_history", "train_on_prompt", "enable_thinking", "fp16"):
+        raw.pop(field, None)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
@@ -115,10 +125,25 @@ def _run_llamafactory_train(config_path: Path) -> tuple[int, str, str]:
     """Invoke llamafactory-cli train with the given config.
 
     Returns (exit_code, stdout, stderr).
+    Uses sys.executable to find the correct venv, then locates llamafactory-cli
+    in the same Scripts directory.
     """
-    cmd = ["llamafactory-cli", "train", str(config_path)]
+    scripts_dir = Path(sys.executable).parent
+    cli_path = scripts_dir / "llamafactory-cli.exe"
+    if not cli_path.exists():
+        cli_path = scripts_dir / "llamafactory-cli"
+    if not cli_path.exists():
+        print("  ERROR: llamafactory-cli not found in venv Scripts directory.")
+        print(f"  Checked: {cli_path}")
+        return 1, "", "llamafactory-cli not found in venv"
+    cmd = [str(cli_path), "train", str(config_path)]
     print(f"  Running: {' '.join(cmd)}")
     result = subprocess.run(cmd, capture_output=True, text=True)
+    # Write full stderr to a log file for debugging
+    log_path = DRYRUN_BASE / "llamafactory_stderr.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    if result.stderr:
+        log_path.write_text(result.stderr, encoding="utf-8")
     return result.returncode, result.stdout, result.stderr
 
 

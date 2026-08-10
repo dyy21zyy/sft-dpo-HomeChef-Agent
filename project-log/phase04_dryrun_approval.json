@@ -1,0 +1,16 @@
+{
+  "approved": true,
+  "checkpoint": "B",
+  "description": "Engineering dry-run validation only. SFT uses 1 row and max_steps=2. DPO uses 1 pair and max_steps=2. This does not represent training effectiveness.",
+  "approved_at": "2026-08-10T19:52:00+08:00",
+  "reviewer": "ChatGPT",
+  "conditions": [
+    "SFT dry-run must use exactly 1 SFT row and max_steps=2.",
+    "DPO dry-run must use exactly 1 DPO pair and max_steps=2.",
+    "Both dry-runs must invoke llamafactory-cli train through scripts/train/dryrun.py.",
+    "Dry-run outputs must stay under experiments/phase04/dryrun/.",
+    "No Frozen Test, Diagnostic Dev, or Phase 02 output may be used as training data.",
+    "Dry-run results must not be used as training effectiveness evidence.",
+    "Task 4 remains blocked until Checkpoint C approval."
+  ]
+}
