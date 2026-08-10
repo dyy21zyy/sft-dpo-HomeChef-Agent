@@ -22,6 +22,11 @@ def write_dataset_manifest(
     diagnostic_dev_overlap: int = 0,
     seed: int = 3001,
     generator: str = "openai_responses",
+    raw_input_fingerprint_duplicate_count: int = 0,
+    sft_prompt_completion_duplicate_count: int = 0,
+    dpo_pair_duplicate_count: int = 0,
+    sft_train_val_overlap_by_hash: int = 0,
+    dpo_train_val_overlap_by_hash: int = 0,
 ) -> Path:
     raw_count = len([l for l in raw_path.read_text(encoding="utf-8").splitlines() if l.strip()])
     manifest = DatasetManifest(
@@ -44,6 +49,11 @@ def write_dataset_manifest(
         dpo_val_count=_count_lines(dpo_val_path),
         frozen_eval_overlap=frozen_eval_overlap,
         diagnostic_dev_overlap=diagnostic_dev_overlap,
+        raw_input_fingerprint_duplicate_count=raw_input_fingerprint_duplicate_count,
+        sft_prompt_completion_duplicate_count=sft_prompt_completion_duplicate_count,
+        dpo_pair_duplicate_count=dpo_pair_duplicate_count,
+        sft_train_val_overlap_by_hash=sft_train_val_overlap_by_hash,
+        dpo_train_val_overlap_by_hash=dpo_train_val_overlap_by_hash,
         seed=seed,
         generator=generator,
     )
@@ -58,6 +68,11 @@ def write_dataset_data_card(
     frozen_eval_overlap: int = 0,
     diagnostic_dev_overlap: int = 0,
     phase02_dependency_status: str = "not_used_for_training",
+    raw_input_fingerprint_duplicate_count: int = 0,
+    sft_prompt_completion_duplicate_count: int = 0,
+    dpo_pair_duplicate_count: int = 0,
+    sft_train_val_overlap_by_hash: int = 0,
+    dpo_train_val_overlap_by_hash: int = 0,
 ) -> Path:
     card = DatasetDataCard(
         dataset_version=dataset_version,
@@ -65,6 +80,11 @@ def write_dataset_data_card(
         frozen_eval_overlap=frozen_eval_overlap,
         diagnostic_dev_overlap=diagnostic_dev_overlap,
         phase02_base_benchmark_dependency=phase02_dependency_status,
+        raw_input_fingerprint_duplicate_count=raw_input_fingerprint_duplicate_count,
+        sft_prompt_completion_duplicate_count=sft_prompt_completion_duplicate_count,
+        dpo_pair_duplicate_count=dpo_pair_duplicate_count,
+        sft_train_val_overlap_by_hash=sft_train_val_overlap_by_hash,
+        dpo_train_val_overlap_by_hash=dpo_train_val_overlap_by_hash,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(card.model_dump(mode="json", exclude_none=False), ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")

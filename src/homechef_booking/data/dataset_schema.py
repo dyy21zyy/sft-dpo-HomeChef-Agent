@@ -58,6 +58,11 @@ class DatasetManifest(BaseModel):
     dpo_val_count: int = 0
     frozen_eval_overlap: int = 0
     diagnostic_dev_overlap: int = 0
+    raw_input_fingerprint_duplicate_count: int = 0
+    sft_prompt_completion_duplicate_count: int = 0
+    dpo_pair_duplicate_count: int = 0
+    sft_train_val_overlap_by_hash: int = 0
+    dpo_train_val_overlap_by_hash: int = 0
     source: str = "synthetic"
     generator: str = "openai_responses"
     seed: int = 3001
@@ -76,3 +81,8 @@ class DatasetDataCard(BaseModel):
     known_invalid_phase02_output: str = "0.6B Frozen missing_mock_prediction is invalid for acceptance and not used"
     frozen_eval_overlap: int = 0
     diagnostic_dev_overlap: int = 0
+    raw_input_fingerprint_duplicate_count: int = 0
+    sft_prompt_completion_duplicate_count: int = 0
+    dpo_pair_duplicate_count: int = 0
+    sft_train_val_overlap_by_hash: int = 0
+    dpo_train_val_overlap_by_hash: int = 0

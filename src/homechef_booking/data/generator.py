@@ -217,6 +217,7 @@ def generate_smoke_raw(output_path: Path, count: int = 25, seed: int = 3001) -> 
                 "想约一个家宴，麻烦帮我安排",
                 "帮我预约私厨",
                 "想吃川菜，帮忙找个厨师",
+                "帮我找个厨师做一顿饭",
             ]
             user_input = user_inputs[(i - 1) % len(user_inputs)]
             bs = _empty_booking()
@@ -244,6 +245,7 @@ def generate_smoke_raw(output_path: Path, count: int = 25, seed: int = 3001) -> 
                 "8月15号晚上6点4个人，上海市徐汇区，川菜，不吃花生，生日宴",
                 "8月20号中午12点6个人，北京市朝阳区，粤菜，商务宴请",
                 "8月18号下午5点3个人，杭州市西湖区，杭帮菜，不吃海鲜",
+                "8月22号下午1点5个人，广州市天河区，湘菜，聚会",
             ]
             user_input = user_inputs[(i - 1) % len(user_inputs)]
             bs = _complete_booking(rng, addresses, cuisines, menu_items, dietary_opts, occasions)
@@ -434,7 +436,7 @@ def generate_smoke_raw(output_path: Path, count: int = 25, seed: int = 3001) -> 
             dpo_targets = ["H4"]
 
         elif scenario == "tool_error":
-            # Multi-turn: tool result error → acknowledge_result / handoff
+            # Multi-turn: tool result error → booking_paused (no retry per contract rules)
             bs = _complete_booking(rng, addresses, cuisines, menu_items, dietary_opts, occasions)
             args = _tool_call_arguments(bs)
             tool_result = {"mode": "search", "status": "error",
@@ -450,8 +452,8 @@ def generate_smoke_raw(output_path: Path, count: int = 25, seed: int = 3001) -> 
             exp = {
                 "action": "final", "booking_state": current_bs, "chef_query_status": "error",
                 "candidate_chefs": [], "info_complete": True, "unrelated": False,
-                "missing_info": [], "reply_type": "acknowledge_result",
-                "reply": "查询过程中出现错误，请稍后重试。",
+                "missing_info": [], "reply_type": "booking_paused",
+                "reply": "查询过程中出现错误，预约已暂停，请稍后重试。",
             }
             conv_kind = "multi_turn"
             output_kind = "final"
