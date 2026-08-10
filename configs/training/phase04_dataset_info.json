@@ -1,0 +1,19 @@
+{
+  "homechef_phase03_sft_v0_1": {
+    "file_name": "data/processed/phase03_sft_v0.1_train.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages"
+    }
+  },
+  "homechef_phase03_dpo_targeted_v0_1": {
+    "file_name": "data/processed/phase03_dpo_targeted_v0.1_train.jsonl",
+    "formatting": "sharegpt",
+    "ranking": true,
+    "columns": {
+      "prompt": "prompt",
+      "chosen": "chosen",
+      "rejected": "rejected"
+    }
+  }
+}
