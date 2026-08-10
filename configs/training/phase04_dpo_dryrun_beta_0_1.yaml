@@ -1,0 +1,32 @@
+# Phase 04 DPO Dry-Run Config — Engineering validation only
+# NOT a formal DPO training config. engineering_dryrun_only: true
+# Must not be reused for formal training.
+
+stage: dpo
+model_name_or_path: Qwen/Qwen3-0.6B-Base
+finetuning_type: lora
+lora_target: all
+lora_rank: 16
+lora_alpha: 32
+lora_dropout: 0.05
+template: qwen3
+enable_thinking: false
+dpo_loss: sigmoid
+cutoff_len: 2048
+learning_rate: 5.0e-6
+num_train_epochs: 1
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 8
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+fp16: false
+train_dataset_path: data/processed/phase03_dpo_targeted_v0.1_train.jsonl
+eval_dataset_path: data/processed/phase03_dpo_targeted_v0.1_val.jsonl
+output_dir: experiments/phase04/dryrun/dpo_qwen3_0_6b_beta_0_1
+max_steps: 2
+sample_count: 1
+engineering_dryrun_only: true
+approval_required:
+  dpo_beta_field_name: "SPEC says beta=0.1/0.3; exact LLaMA-Factory config key requires approval."

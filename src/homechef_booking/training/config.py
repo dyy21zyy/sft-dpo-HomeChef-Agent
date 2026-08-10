@@ -100,10 +100,21 @@ class TrainingRunSpec(BaseModel):
     dpo_loss: str | None = Field(default=None)
     dpo_ftx: float | None = Field(default=None)
 
+    # ── Dry-run only (engineering validation, not for formal training) ──
+    engineering_dryrun_only: bool = Field(default=False)
+    max_steps: int | None = Field(default=None)
+    sample_count: int | None = Field(default=None)
+
+    # ── Output ──
+    output_dir: Path | None = Field(default=None)
+
+    # ── Approval metadata (informational, not validated) ──
+    approval_required: dict[str, str] | None = Field(default=None)
+
     @classmethod
     def _validate_path_coercion(cls, data: dict) -> dict:
         """Coerce string paths to Path objects before model init."""
-        for key in ("train_dataset_path", "eval_dataset_path", "adapter_name_or_path"):
+        for key in ("train_dataset_path", "eval_dataset_path", "adapter_name_or_path", "output_dir"):
             if key in data and data[key] is not None and isinstance(data[key], str):
                 data[key] = Path(data[key])
         return data
