@@ -11,7 +11,12 @@ from collections import Counter
 from pathlib import Path
 
 from homechef_booking.data.contamination import check_raw_contamination
-from homechef_booking.data.manifest import write_dataset_data_card, write_dataset_manifest
+from homechef_booking.data.manifest import (
+    write_dataset_data_card,
+    write_dataset_manifest,
+    write_targeted_dpo_data_card,
+    write_targeted_dpo_manifest,
+)
 from homechef_booking.data.raw_validator import validate_raw_jsonl
 
 
@@ -123,6 +128,28 @@ def compute_dpo_train_val_overlap(train_path: Path | None, val_path: Path | None
     return _train_val_overlap(train_hashes, val_hashes)
 
 
+def _count_lines(path: Path | None) -> int:
+    if path is None or not path.exists():
+        return 0
+    return len([l for l in path.read_text(encoding="utf-8").splitlines() if l.strip()])
+
+
+def _compute_target_distribution(train_path: Path, val_path: Path) -> dict[str, int]:
+    """Count heuristics across train and val DPO files."""
+    dist: dict[str, int] = {}
+    for path in [train_path, val_path]:
+        if path is None or not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            h = row.get("heuristic", "unknown")
+            dist[h] = dist.get(h, 0) + 1
+    return dist
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate Phase 03 dataset")
     parser.add_argument("--raw", required=True, type=str, help="Path to raw JSONL")
@@ -134,6 +161,10 @@ def main() -> None:
     parser.add_argument("--diagnostic", type=str, default=None)
     parser.add_argument("--manifest-out", required=True, type=str)
     parser.add_argument("--data-card-out", required=True, type=str)
+    parser.add_argument("--targeted-dpo", action="store_true", default=False,
+                        help="Produce targeted DPO manifest and data card (separate from dense DPO)")
+    parser.add_argument("--min-per-target", type=int, default=25,
+                        help="Minimum expected pairs per target (for min_per_target_satisfied check)")
     args = parser.parse_args()
 
     raw_path = Path(args.raw)
@@ -186,34 +217,71 @@ def main() -> None:
     print(f"sft_train_val_overlap_by_hash: {sft_overlap}")
     print(f"dpo_train_val_overlap_by_hash: {dpo_overlap}")
 
-    write_dataset_manifest(
-        output_path=Path(args.manifest_out),
-        dataset_version="phase03_v0.1",
-        raw_path=raw_path,
-        sft_train_path=sft_train_path,
-        sft_val_path=sft_val_path,
-        dpo_train_path=dpo_train_path,
-        dpo_val_path=dpo_val_path,
-        frozen_eval_overlap=frozen_overlap,
-        diagnostic_dev_overlap=diagnostic_overlap,
-        generator="deterministic_smoke",
-        raw_input_fingerprint_duplicate_count=raw_dup,
-        sft_prompt_completion_duplicate_count=sft_dup,
-        dpo_pair_duplicate_count=dpo_dup,
-        sft_train_val_overlap_by_hash=sft_overlap,
-        dpo_train_val_overlap_by_hash=dpo_overlap,
-    )
-    write_dataset_data_card(
-        output_path=Path(args.data_card_out),
-        dataset_version="phase03_v0.1",
-        frozen_eval_overlap=frozen_overlap,
-        diagnostic_dev_overlap=diagnostic_overlap,
-        raw_input_fingerprint_duplicate_count=raw_dup,
-        sft_prompt_completion_duplicate_count=sft_dup,
-        dpo_pair_duplicate_count=dpo_dup,
-        sft_train_val_overlap_by_hash=sft_overlap,
-        dpo_train_val_overlap_by_hash=dpo_overlap,
-    )
+    # Targeted DPO metrics
+    if args.targeted_dpo and dpo_train_path and dpo_val_path:
+        target_dist = _compute_target_distribution(dpo_train_path, dpo_val_path)
+        total_targeted = _count_lines(dpo_train_path) + _count_lines(dpo_val_path)
+        min_ok = all(v >= args.min_per_target for v in target_dist.values()) if target_dist else False
+        print(f"targeted_dpo_total_count: {total_targeted}")
+        print(f"targeted_dpo_train_count: {_count_lines(dpo_train_path)}")
+        print(f"targeted_dpo_val_count: {_count_lines(dpo_val_path)}")
+        print(f"target_distribution: {target_dist}")
+        print(f"min_per_target_satisfied: {min_ok}")
+
+        write_targeted_dpo_manifest(
+            output_path=Path(args.manifest_out),
+            dataset_version="phase03_v0.1",
+            raw_path=raw_path,
+            dpo_train_path=dpo_train_path,
+            dpo_val_path=dpo_val_path,
+            target_distribution=target_dist,
+            min_per_target=args.min_per_target,
+            min_per_target_satisfied=min_ok,
+            total_pairs=total_targeted,
+            dpo_pair_duplicate_count=dpo_dup,
+            dpo_train_val_overlap_by_hash=dpo_overlap,
+            frozen_eval_overlap=frozen_overlap,
+            diagnostic_dev_overlap=diagnostic_overlap,
+        )
+        write_targeted_dpo_data_card(
+            output_path=Path(args.data_card_out),
+            dataset_version="phase03_v0.1",
+            target_distribution=target_dist,
+            total_pairs=total_targeted,
+            dpo_pair_duplicate_count=dpo_dup,
+            dpo_train_val_overlap_by_hash=dpo_overlap,
+            frozen_eval_overlap=frozen_overlap,
+            diagnostic_dev_overlap=diagnostic_overlap,
+        )
+    else:
+        write_dataset_manifest(
+            output_path=Path(args.manifest_out),
+            dataset_version="phase03_v0.1",
+            raw_path=raw_path,
+            sft_train_path=sft_train_path,
+            sft_val_path=sft_val_path,
+            dpo_train_path=dpo_train_path,
+            dpo_val_path=dpo_val_path,
+            frozen_eval_overlap=frozen_overlap,
+            diagnostic_dev_overlap=diagnostic_overlap,
+            generator="deterministic_smoke",
+            raw_input_fingerprint_duplicate_count=raw_dup,
+            sft_prompt_completion_duplicate_count=sft_dup,
+            dpo_pair_duplicate_count=dpo_dup,
+            sft_train_val_overlap_by_hash=sft_overlap,
+            dpo_train_val_overlap_by_hash=dpo_overlap,
+        )
+        write_dataset_data_card(
+            output_path=Path(args.data_card_out),
+            dataset_version="phase03_v0.1",
+            frozen_eval_overlap=frozen_overlap,
+            diagnostic_dev_overlap=diagnostic_overlap,
+            raw_input_fingerprint_duplicate_count=raw_dup,
+            sft_prompt_completion_duplicate_count=sft_dup,
+            dpo_pair_duplicate_count=dpo_dup,
+            sft_train_val_overlap_by_hash=sft_overlap,
+            dpo_train_val_overlap_by_hash=dpo_overlap,
+        )
     print(f"Manifest written to {args.manifest_out}")
     print(f"Data card written to {args.data_card_out}")
     print("Validation PASSED")

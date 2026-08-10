@@ -1,0 +1,29 @@
+{
+  "contract_id": "homechef-booking-v1",
+  "created_at": "2026-08-10T06:45:41.279050+00:00",
+  "data_card_type": "targeted_dpo",
+  "dataset_version": "phase03_v0.1",
+  "dense_dpo_v0_1_preserved": true,
+  "description": "Targeted DPO is an experimental addition to the dense DPO v0.1 dataset. It covers only high-risk preference boundary corrections.",
+  "diagnostic_dev_overlap": 0,
+  "dpo_not_full_raw_coverage": true,
+  "dpo_pair_duplicate_count": 0,
+  "dpo_train_val_overlap_by_hash": 0,
+  "frozen_eval_overlap": 0,
+  "no_frozen_test_training_use": true,
+  "no_real_user_logs": true,
+  "phase": "03",
+  "phase02_invalid_output_not_used": true,
+  "target_distribution": {
+    "H1": 58,
+    "H3": 45,
+    "H4": 53,
+    "H5": 39,
+    "H7": 45
+  },
+  "targeted_dpo_purpose": "High-risk preference boundary correction only",
+  "tool_error_booking_paused_coverage": "not covered by current targeted DPO v0.1",
+  "total_pairs": 240,
+  "total_pairs_controlled": "180-240",
+  "train_val_split": "approximately 90/10"
+}

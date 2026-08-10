@@ -95,3 +95,91 @@ def _count_lines(path: Path | None) -> int:
     if path is None or not path.exists():
         return 0
     return len([l for l in path.read_text(encoding="utf-8").splitlines() if l.strip()])
+
+
+def write_targeted_dpo_manifest(
+    output_path: Path,
+    dataset_version: str,
+    raw_path: Path,
+    dpo_train_path: Path,
+    dpo_val_path: Path,
+    target_distribution: dict[str, int],
+    min_per_target: int,
+    min_per_target_satisfied: bool,
+    total_pairs: int,
+    dpo_pair_duplicate_count: int = 0,
+    dpo_train_val_overlap_by_hash: int = 0,
+    frozen_eval_overlap: int = 0,
+    diagnostic_dev_overlap: int = 0,
+    seed: int = 3001,
+) -> Path:
+    """Write a targeted DPO manifest (separate from the dense DPO manifest)."""
+    manifest = {
+        "manifest_type": "targeted_dpo",
+        "dataset_version": dataset_version,
+        "contract_id": "homechef-booking-v1",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "dpo_policy": "targeted",
+        "dpo_policy_description": "High-risk heuristics only: H1 (fabricated chef), H3 (stale chef ID), H4 (dietary constraint loss), H5 (query dependency mutation), H6 (unauthorized booking confirmation), H7 (candidate order mutation)",
+        "dpo_policy_exclusions": "H2 (action type swap — structural, not business safety). tool_error_booking_paused is not covered by current targeted DPO v0.1.",
+        "dense_dpo_v0_1_preserved": True,
+        "raw_path": str(raw_path),
+        "raw_sha256": compute_sha256(raw_path),
+        "dpo_train_path": str(dpo_train_path),
+        "dpo_train_sha256": compute_sha256(dpo_train_path) if dpo_train_path.exists() else None,
+        "dpo_train_count": _count_lines(dpo_train_path),
+        "dpo_val_path": str(dpo_val_path),
+        "dpo_val_sha256": compute_sha256(dpo_val_path) if dpo_val_path.exists() else None,
+        "dpo_val_count": _count_lines(dpo_val_path),
+        "total_pairs": total_pairs,
+        "target_distribution": target_distribution,
+        "min_per_target": min_per_target,
+        "min_per_target_satisfied": min_per_target_satisfied,
+        "dpo_pair_duplicate_count": dpo_pair_duplicate_count,
+        "dpo_train_val_overlap_by_hash": dpo_train_val_overlap_by_hash,
+        "frozen_eval_overlap": frozen_eval_overlap,
+        "diagnostic_dev_overlap": diagnostic_dev_overlap,
+        "seed": seed,
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+    return output_path
+
+
+def write_targeted_dpo_data_card(
+    output_path: Path,
+    dataset_version: str,
+    target_distribution: dict[str, int],
+    total_pairs: int,
+    dpo_pair_duplicate_count: int = 0,
+    dpo_train_val_overlap_by_hash: int = 0,
+    frozen_eval_overlap: int = 0,
+    diagnostic_dev_overlap: int = 0,
+) -> Path:
+    """Write a targeted DPO data card."""
+    card = {
+        "data_card_type": "targeted_dpo",
+        "phase": "03",
+        "contract_id": "homechef-booking-v1",
+        "dataset_version": dataset_version,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "description": "Targeted DPO is an experimental addition to the dense DPO v0.1 dataset. It covers only high-risk preference boundary corrections.",
+        "dpo_not_full_raw_coverage": True,
+        "targeted_dpo_purpose": "High-risk preference boundary correction only",
+        "dense_dpo_v0_1_preserved": True,
+        "total_pairs": total_pairs,
+        "target_distribution": target_distribution,
+        "train_val_split": "approximately 90/10",
+        "total_pairs_controlled": "180-240",
+        "no_frozen_test_training_use": True,
+        "no_real_user_logs": True,
+        "phase02_invalid_output_not_used": True,
+        "dpo_pair_duplicate_count": dpo_pair_duplicate_count,
+        "dpo_train_val_overlap_by_hash": dpo_train_val_overlap_by_hash,
+        "frozen_eval_overlap": frozen_eval_overlap,
+        "diagnostic_dev_overlap": diagnostic_dev_overlap,
+        "tool_error_booking_paused_coverage": "not covered by current targeted DPO v0.1",
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(card, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+    return output_path
