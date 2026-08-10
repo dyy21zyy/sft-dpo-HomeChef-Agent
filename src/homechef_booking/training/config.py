@@ -181,11 +181,12 @@ def validate_training_run_spec(spec: TrainingRunSpec) -> list[str]:
         if not spec.eval_dataset_path.exists():
             errors.append(f"eval_dataset_path does not exist: {spec.eval_dataset_path}")
 
-    # Batch size must be 2
-    if spec.per_device_train_batch_size != 2:
-        errors.append(f"per_device_train_batch_size must be 2, got {spec.per_device_train_batch_size}.")
-    if spec.per_device_eval_batch_size != 2:
-        errors.append(f"per_device_eval_batch_size must be 2, got {spec.per_device_eval_batch_size}.")
+    # Batch size must be 2 (skip for engineering dry-run configs)
+    if not spec.engineering_dryrun_only:
+        if spec.per_device_train_batch_size != 2:
+            errors.append(f"per_device_train_batch_size must be 2, got {spec.per_device_train_batch_size}.")
+        if spec.per_device_eval_batch_size != 2:
+            errors.append(f"per_device_eval_batch_size must be 2, got {spec.per_device_eval_batch_size}.")
 
     return errors
 

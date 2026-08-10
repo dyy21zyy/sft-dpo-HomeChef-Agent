@@ -132,6 +132,109 @@ def test_dryrun_requires_approval_file(monkeypatch):
     assert result.returncode != 0
 
 
+def test_dryrun_rejects_invalid_approval_file():
+    """dryrun.py must fail when approval file exists but approved is not true."""
+    import subprocess
+    import sys
+
+    # Create a temp approval file with approved=false
+    approval_path = Path("project-log/_test_approval_false.json")
+    approval_path.parent.mkdir(parents=True, exist_ok=True)
+    approval_path.write_text(json.dumps({"approved": False}), encoding="utf-8")
+    try:
+        result = subprocess.run(
+            [sys.executable, "scripts/train/dryrun.py",
+             "--stage", "sft",
+             "--config", "configs/training/phase04_sft_qwen3_0_6b.yaml",
+             "--sample-count", "1",
+             "--max-steps", "2",
+             "--approval-file", str(approval_path)],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0
+    finally:
+        approval_path.unlink(missing_ok=True)
+
+
+def test_dryrun_dpo_blocked():
+    """dryrun.py must block DPO with dpo_beta_field_name_unconfirmed."""
+    import subprocess
+    import sys
+
+    # Create a temp approval file with approved=true
+    approval_path = Path("project-log/_test_approval_true.json")
+    approval_path.parent.mkdir(parents=True, exist_ok=True)
+    approval_path.write_text(json.dumps({"approved": True}), encoding="utf-8")
+    try:
+        result = subprocess.run(
+            [sys.executable, "scripts/train/dryrun.py",
+             "--stage", "dpo",
+             "--config", "configs/training/phase04_dpo_dryrun_beta_0_1.yaml",
+             "--sample-count", "1",
+             "--max-steps", "2",
+             "--approval-file", str(approval_path)],
+            capture_output=True,
+            text=True,
+        )
+        # DPO blocked exits 0 (not an error, just blocked)
+        assert result.returncode == 0
+        assert "BLOCKED" in result.stdout
+        assert "dpo_beta_field_name" in result.stdout
+
+        # Verify manifest was written with dpo_blocked
+        manifest_path = Path("project-log/phase04_dryrun_manifest.json")
+        assert manifest_path.exists()
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["dpo_passed"] is False
+        assert manifest["dpo_blocked_reason"] == "dpo_beta_field_name_unconfirmed"
+    finally:
+        approval_path.unlink(missing_ok=True)
+        manifest_path = Path("project-log/phase04_dryrun_manifest.json")
+        manifest_path.unlink(missing_ok=True)
+
+
+def test_dryrun_sft_creates_temp_dataset():
+    """dryrun.py SFT mode must create the 1-row temporary dataset (if LLaMA-Factory not available, fail at train step)."""
+    import subprocess
+    import sys
+
+    approval_path = Path("project-log/_test_approval_true.json")
+    approval_path.parent.mkdir(parents=True, exist_ok=True)
+    approval_path.write_text(json.dumps({"approved": True}), encoding="utf-8")
+    try:
+        result = subprocess.run(
+            [sys.executable, "scripts/train/dryrun.py",
+             "--stage", "sft",
+             "--config", "configs/training/phase04_sft_qwen3_0_6b.yaml",
+             "--sample-count", "1",
+             "--max-steps", "2",
+             "--approval-file", str(approval_path)],
+            capture_output=True,
+            text=True,
+        )
+        # If llamafactory-cli is not installed, the subprocess call will fail.
+        # The temp dataset should still have been created before that point.
+        # Either way, verify the stdout shows the temp dataset was prepared.
+        assert "Temporary SFT dataset" in result.stdout or "phase04_dryrun_sft_1row.jsonl" in result.stdout
+        assert "Temporary SFT config" in result.stdout or "phase04_dryrun_sft_1row.yaml" in result.stdout
+        assert "llamafactory-cli train" in result.stdout
+    finally:
+        approval_path.unlink(missing_ok=True)
+        # Clean up temp files
+        for p in [SFT_TEMP_DATASET, SFT_TEMP_CONFIG]:
+            if p.exists():
+                p.unlink(missing_ok=True)
+        manifest_path = Path("project-log/phase04_dryrun_manifest.json")
+        manifest_path.unlink(missing_ok=True)
+
+
+# ── Temp path constants for cleanup ──
+
+SFT_TEMP_DATASET = Path("experiments/phase04/dryrun/phase04_dryrun_sft_1row.jsonl")
+SFT_TEMP_CONFIG = Path("experiments/phase04/dryrun/phase04_dryrun_sft_1row.yaml")
+
+
 # ── package_cloud_artifacts approval gate ───────────────────────────────────
 
 
