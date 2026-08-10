@@ -21,6 +21,7 @@ def write_dataset_manifest(
     frozen_eval_overlap: int = 0,
     diagnostic_dev_overlap: int = 0,
     seed: int = 3001,
+    generator: str = "openai_responses",
 ) -> Path:
     raw_count = len([l for l in raw_path.read_text(encoding="utf-8").splitlines() if l.strip()])
     manifest = DatasetManifest(
@@ -44,6 +45,7 @@ def write_dataset_manifest(
         frozen_eval_overlap=frozen_eval_overlap,
         diagnostic_dev_overlap=diagnostic_dev_overlap,
         seed=seed,
+        generator=generator,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(manifest.model_dump(mode="json", exclude_none=False), ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")

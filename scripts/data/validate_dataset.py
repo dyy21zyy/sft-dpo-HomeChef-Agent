@@ -34,19 +34,29 @@ def main() -> None:
         raise SystemExit(1)
 
     eval_paths = []
+    frozen_path = None
+    diagnostic_path = None
     if args.frozen:
-        eval_paths.append(Path(args.frozen))
+        frozen_path = Path(args.frozen)
+        eval_paths.append(frozen_path)
     if args.diagnostic:
-        eval_paths.append(Path(args.diagnostic))
+        diagnostic_path = Path(args.diagnostic)
+        eval_paths.append(diagnostic_path)
 
+    frozen_overlap = 0
+    diagnostic_overlap = 0
     if eval_paths:
         contamination = check_raw_contamination(raw_path, eval_paths)
         print(f"Contamination check: {contamination.overlap_count} overlaps with eval suites")
         if contamination.overlapping_ids:
             print(f"  Overlapping IDs: {contamination.overlapping_ids}")
-        frozen_overlap = contamination.overlap_count if args.frozen else 0
-    else:
-        frozen_overlap = 0
+        # Check each eval suite separately for accurate overlap counts
+        if frozen_path:
+            frozen_report = check_raw_contamination(raw_path, [frozen_path])
+            frozen_overlap = frozen_report.overlap_count
+        if diagnostic_path:
+            diag_report = check_raw_contamination(raw_path, [diagnostic_path])
+            diagnostic_overlap = diag_report.overlap_count
 
     write_dataset_manifest(
         output_path=Path(args.manifest_out),
@@ -57,13 +67,14 @@ def main() -> None:
         dpo_train_path=Path(args.dpo_train) if args.dpo_train else None,
         dpo_val_path=Path(args.dpo_val) if args.dpo_val else None,
         frozen_eval_overlap=frozen_overlap,
-        diagnostic_dev_overlap=0,
+        diagnostic_dev_overlap=diagnostic_overlap,
+        generator="deterministic_smoke",
     )
     write_dataset_data_card(
         output_path=Path(args.data_card_out),
         dataset_version="phase03_v0.1",
         frozen_eval_overlap=frozen_overlap,
-        diagnostic_dev_overlap=0,
+        diagnostic_dev_overlap=diagnostic_overlap,
     )
     print(f"Manifest written to {args.manifest_out}")
     print(f"Data card written to {args.data_card_out}")
