@@ -1,0 +1,14 @@
+# Phase 04 training dependencies
+# Approved via Checkpoint A — 2026-08-10
+#
+# Exact resolved training dependency versions must be recorded from the
+# GPU environment before formal SFT.
+#
+# Do not modify without ChatGPT re-approval.
+#
+# Approved command template:
+#   llamafactory-cli train <config.yaml>
+
+llamafactory>=0.9.0
+peft>=0.13.0
+datasets>=3.0.0
