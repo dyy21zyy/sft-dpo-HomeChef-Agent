@@ -1,7 +1,7 @@
 """Phase 04 Task 3 — Training artifact manifest and dry-run support."""
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -33,7 +33,7 @@ class TrainingArtifactManifest(BaseModel):
     max_steps: int = 2
     approval_id: str = ""
     git_sha: str = ""
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     hardware: dict[str, Any] = Field(default_factory=dict)
     dependency_snapshot_path: str = ""
 

@@ -3,21 +3,18 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from homechef_booking.training.dataset_adapter import (
     DatasetPreflightReport,
     validate_dpo_for_training,
     validate_sft_for_training,
 )
 
-
 # ── Accepted Phase 03 counts ────────────────────────────────────────────────
 
 
 def test_sft_train_file_matches_accepted_phase03_count():
     report = validate_sft_for_training(
-        Path("data/processed/phase03_sft_v0.1_train.jsonl"), expected_count=540
+        Path("data/processed/sft/v0.3/train.jsonl"), expected_count=540
     )
     assert report.total_rows == 540
     assert report.error_count == 0
@@ -26,7 +23,7 @@ def test_sft_train_file_matches_accepted_phase03_count():
 
 def test_sft_val_file_matches_accepted_phase03_count():
     report = validate_sft_for_training(
-        Path("data/processed/phase03_sft_v0.1_val.jsonl"), expected_count=60
+        Path("data/processed/sft/v0.3/val.jsonl"), expected_count=60
     )
     assert report.total_rows == 60
     assert report.error_count == 0
@@ -35,7 +32,7 @@ def test_sft_val_file_matches_accepted_phase03_count():
 
 def test_targeted_dpo_train_file_matches_accepted_phase03_count():
     report = validate_dpo_for_training(
-        Path("data/processed/phase03_dpo_targeted_v0.1_train.jsonl"), expected_count=216
+        Path("data/processed/dpo/v0.3/train.jsonl"), expected_count=216
     )
     assert report.total_rows == 216
     assert report.error_count == 0
@@ -44,7 +41,7 @@ def test_targeted_dpo_train_file_matches_accepted_phase03_count():
 
 def test_targeted_dpo_val_file_matches_accepted_phase03_count():
     report = validate_dpo_for_training(
-        Path("data/processed/phase03_dpo_targeted_v0.1_val.jsonl"), expected_count=24
+        Path("data/processed/dpo/v0.3/val.jsonl"), expected_count=24
     )
     assert report.total_rows == 24
     assert report.error_count == 0
@@ -83,7 +80,7 @@ def test_preflight_rejects_phase02_benchmark_output():
 
 def test_preflight_detects_count_mismatch():
     report = validate_sft_for_training(
-        Path("data/processed/phase03_sft_v0.1_train.jsonl"), expected_count=999
+        Path("data/processed/sft/v0.3/train.jsonl"), expected_count=999
     )
     assert not report.passed
     assert any("count" in e.lower() or "expected 999" in e.lower() or "540" in e for e in report.errors)

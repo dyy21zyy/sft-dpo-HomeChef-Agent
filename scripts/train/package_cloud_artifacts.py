@@ -10,7 +10,7 @@ or reports approval_required. Does NOT silently create requirements-train.txt.
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from homechef_booking.training.config import load_training_run_spec, validate_training_run_spec
@@ -75,22 +75,22 @@ def main() -> None:
     else:
         missing.append(str(registry_path))
 
-    # 3. Phase 03 dataset manifest
-    ds_manifest = Path("data/processed/phase03_dataset_manifest.v0.1.json")
+    # 3. Phase 03 v0.3 dataset manifest (frozen training data)
+    ds_manifest = Path("data/processed/sft/v0.3/manifest.json")
     if ds_manifest.exists():
         artifacts["dataset_manifest"] = str(ds_manifest)
     else:
         missing.append(str(ds_manifest))
 
-    # 4. Phase 03 data card
-    ds_card = Path("data/processed/phase03_data_card.v0.1.json")
+    # 4. Phase 03 v0.3 data card
+    ds_card = Path("data/processed/sft/v0.3/dataset_card.md")
     if ds_card.exists():
         artifacts["data_card"] = str(ds_card)
     else:
         missing.append(str(ds_card))
 
-    # 5. Contract manifest (Phase 00)
-    contract = Path("data/processed/phase03_dataset_manifest.v0.1.json")
+    # 5. Contract manifest (Phase 03 v0.3 freeze record)
+    contract = Path("reports/generated/phase03/v0.3/phase03_v0.3_freeze.json")
     if contract.exists():
         artifacts["contract_manifest"] = str(contract)
 
@@ -117,26 +117,26 @@ def main() -> None:
 
     # 8. Generated README
     readme_lines = [
-        f"# Phase 04 Training Package",
-        f"",
-        f"Generated: {datetime.now(timezone.utc).isoformat()}",
-        f"",
-        f"## Config",
+        "# Phase 04 Training Package",
+        "",
+        f"Generated: {datetime.now(UTC).isoformat()}",
+        "",
+        "## Config",
         f"- Stage: {spec.stage}",
         f"- Model: {spec.model_name_or_path}",
         f"- Training config: {args.config}",
-        f"",
-        f"## Artifacts",
+        "",
+        "## Artifacts",
     ]
     for name, path in sorted(artifacts.items()):
         readme_lines.append(f"- {name}: {path}")
     if missing:
-        readme_lines.append(f"")
-        readme_lines.append(f"## Missing")
+        readme_lines.append("")
+        readme_lines.append("## Missing")
         for m in missing:
             readme_lines.append(f"- {m} (approval_required)")
-    readme_lines.append(f"")
-    readme_lines.append(f"## Approval")
+    readme_lines.append("")
+    readme_lines.append("## Approval")
     readme_lines.append(f"- Approval file: {args.approval_file}")
 
     readme_path = output_dir / "README.md"
@@ -145,7 +145,7 @@ def main() -> None:
     # 9. Package manifest
     package_manifest = {
         "package_type": "phase04_training_artifacts",
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "config": str(config_path),
         "artifacts": artifacts,
         "missing": missing,
@@ -159,8 +159,8 @@ def main() -> None:
     print(f"  Artifacts: {len(artifacts)} collected")
     print(f"  Missing: {len(missing)} (approval_required)")
     if missing:
-        print(f"  WARNING: Some artifacts require Checkpoint A approval.")
-        print(f"  Do NOT deploy without all artifacts.")
+        print("  WARNING: Some artifacts require Checkpoint A approval.")
+        print("  Do NOT deploy without all artifacts.")
 
 
 if __name__ == "__main__":

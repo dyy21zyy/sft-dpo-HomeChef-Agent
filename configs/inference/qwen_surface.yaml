@@ -1,0 +1,19 @@
+# Qwen (DashScope) OpenAI-compatible API backend for Strong-Model Chinese
+# Surface Realization.
+#
+# Security:
+#   - API key and base URL are read ONLY from environment variables
+#     (DASHSCOPE_API_KEY, DASHSCOPE_BASE_URL). NEVER hard-code them here.
+#   - Logs only show "SET"/"MISSING", never the key value.
+#
+# MODEL NOTE:
+#   `model` must be set to the actual DashScope/Qwen model you intend to call
+#   (e.g. "qwen-plus", "qwen-max", "qwen-turbo", "qwen2.5-72b-instruct").
+#   Leaving it empty → QWEN_MODEL_NOT_CONFIGURED at load time.
+backend: qwen_api
+model: qwen3.7-plus # <-- SET THE ACTUAL QWEN MODEL NAME HERE
+temperature: 0.8
+max_tokens: 512
+timeout_s: 180
+api_key_env: DASHSCOPE_API_KEY
+base_url_env: DASHSCOPE_BASE_URL

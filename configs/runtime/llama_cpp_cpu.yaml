@@ -1,0 +1,7 @@
+# Phase 02 llama.cpp CPU runtime configuration
+# Used by PowerShell scripts to launch llama-server.exe
+host: 127.0.0.1
+port: 8080
+ctx_size: 2048
+threads: auto
+gpu_layers: 0

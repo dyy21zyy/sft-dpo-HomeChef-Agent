@@ -5,7 +5,6 @@ import json
 from homechef_booking.evaluation.evidence import ToolEvidence
 from homechef_booking.evaluation.results import DimensionScore
 from homechef_booking.evaluation.sample import EvalCase
-from homechef_booking.evaluation.scorers.protocol import ProtocolScorer
 from homechef_booking.evaluation.scorers.reply_semantics import score_reply
 from homechef_booking.evaluation.scorers.semantic_slots import (
     Phase01DeterministicEmbedder,
@@ -26,10 +25,23 @@ class TaskCorrectnessScorer:
 
     def score(self, case: EvalCase, generation: GenerationResult, evidence: ToolEvidence | None = None) -> DimensionScore:
         evidence = evidence or ToolEvidence()
-        protocol = ProtocolScorer().score(case, generation)
-        if protocol.passed is not True:
-            return DimensionScore(name=self.name, score=0.0, passed=False, details={"protocol_failed": True, "structured_score": 0.0, "reply_score": 0.0})
-        predicted = json.loads(generation.raw_text or "{}")
+
+        # Decoupled scoring: Task Correctness is independent of Protocol.
+        # Score task even when protocol fails, as long as JSON is parseable.
+        try:
+            predicted = json.loads(generation.raw_text or "{}")
+        except (json.JSONDecodeError, TypeError):
+            return DimensionScore(
+                name=self.name, score=0.0, passed=False,
+                details={"parseable": False, "structured_score": 0.0, "reply_score": 0.0},
+            )
+
+        if not isinstance(predicted, dict):
+            return DimensionScore(
+                name=self.name, score=0.0, passed=False,
+                details={"parseable": False, "structured_score": 0.0, "reply_score": 0.0},
+            )
+
         expected = case.expected.model_dump(mode="json", exclude_none=False)
         if case.output_kind == "tool_call":
             checks = self._tool_checks(expected, predicted)
@@ -42,8 +54,10 @@ class TaskCorrectnessScorer:
         return DimensionScore(name=self.name, score=task_score, passed=task_score >= 0.95, details={"structured_score": structured_score, "reply_score": reply_score, "structured_checks": checks})
 
     def _tool_checks(self, expected: dict[str, object], predicted: dict[str, object]) -> dict[str, float]:
-        expected_args = expected["arguments"]
-        predicted_args = predicted["arguments"]
+        expected_args = expected.get("arguments", {})
+        predicted_args = predicted.get("arguments", {})
+        if not isinstance(predicted_args, dict):
+            predicted_args = {}
         checks = {"action": _exact(predicted.get("action"), expected.get("action")), "tool_name": _exact(predicted.get("tool_name"), expected.get("tool_name"))}
         for key in TOOL_ARGUMENT_KEYS:
             checks[f"arguments.{key}"] = self._slot_score(key, expected_args.get(key), predicted_args.get(key))

@@ -298,13 +298,27 @@ def _check_state_invalidation(
     runtime_input: dict,
     issues: list[ValidationIssue],
 ) -> None:
-    """Check query dependency mutation invalidates stale tool facts."""
+    """Check query dependency mutation invalidates stale tool facts.
+
+    A query-dependency mutation is a CHANGE to a search-input field
+    (date/time/people/address/cuisine/budget/menu/dietary/occasion). For
+    `chef_name`, a transition from None → value is a candidate SELECTION
+    (not a query change) and must NOT trigger invalidation. Only a
+    value → different-value transition (an explicit chef change / re-query)
+    triggers stale-tool-fact invalidation.
+    """
     current_state = runtime_input.get("current_state", {})
     current_booking = current_state.get("booking_state", {})
     new_booking = decision.booking_state.model_dump()
     for field in QUERY_DEPENDENCY_FIELDS:
-        if field in current_booking and field in new_booking:
-            if current_booking[field] != new_booking[field]:
+        if field not in current_booking or field not in new_booking:
+            continue
+        cur_val = current_booking[field]
+        new_val = new_booking[field]
+        # chef_name None → value is a candidate selection, not a query change.
+        if field == "chef_name" and cur_val is None and new_val is not None:
+            continue
+        if cur_val != new_val:
                 if decision.candidate_chefs:
                     issues.append(
                         ValidationIssue(

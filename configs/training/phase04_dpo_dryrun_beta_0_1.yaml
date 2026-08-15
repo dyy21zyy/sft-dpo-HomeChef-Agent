@@ -7,6 +7,7 @@
 #   pref_loss: sigmoid
 
 stage: dpo
+experiment_class: historical
 model_name_or_path: Qwen/Qwen3-0.6B-Base
 finetuning_type: lora
 lora_target: all
@@ -25,8 +26,8 @@ lr_scheduler_type: cosine
 warmup_ratio: 0.1
 bf16: true
 fp16: false
-train_dataset_path: data/processed/phase03_dpo_targeted_v0.1_train.jsonl
-eval_dataset_path: data/processed/phase03_dpo_targeted_v0.1_val.jsonl
+train_dataset_path: data/processed/dpo/v0.3/train.jsonl
+eval_dataset_path: data/processed/dpo/v0.3/val.jsonl
 output_dir: experiments/phase04/dryrun/dpo_qwen3_0_6b_beta_0_1
 max_steps: 2
 sample_count: 1

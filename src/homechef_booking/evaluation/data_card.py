@@ -10,6 +10,7 @@ from homechef_booking.evaluation.benchmark_runner import BenchmarkConfig, Benchm
 
 
 def generate_data_card(result: BenchmarkResult, config: BenchmarkConfig, output_path: Path) -> Path:
+    latency = result.latency_metrics
     card = {
         "benchmark_name": "HomeChef-Booking-M0",
         "phase": "02",
@@ -19,12 +20,29 @@ def generate_data_card(result: BenchmarkResult, config: BenchmarkConfig, output_
         "run_id": result.run_id,
         "generated_at": datetime.now(UTC).isoformat(),
         "frozen_suite": config.manifest_path is not None,
+        "runtime": config.runtime or "unknown",
+        "model_format": config.model_format or "unknown",
+        "quantization": config.quantization or "unknown",
+        "gpu_layers": config.gpu_layers,
+        "device": config.device,
         "no_sft_dpo_training": True,
-        "no_model_downloaded": True,
-        "no_real_inference": True,
         "no_training": True,
         "hardware": result.hardware_info or {},
-        "latency": result.latency_metrics or {},
+        "latency": {
+            "mean_latency_ms": latency.mean_latency_ms if latency else None,
+            "median_latency_ms": latency.median_latency_ms if latency else None,
+            "p95_latency_ms": latency.p95_latency_ms if latency else None,
+            "mean_ttft_ms": latency.mean_ttft_ms if latency else None,
+            "median_ttft_ms": latency.median_ttft_ms if latency else None,
+            "p95_ttft_ms": latency.p95_ttft_ms if latency else None,
+            "mean_tokens_per_second": latency.mean_tokens_per_second if latency else None,
+            "median_tokens_per_second": latency.median_tokens_per_second if latency else None,
+            "performance_sample_count": latency.performance_sample_count if latency else 0,
+            "failed_inference_cases": latency.failed_inference_cases if latency else 0,
+            "timeout_cases": latency.timeout_cases if latency else 0,
+            "total_wall_seconds": latency.total_wall_seconds if latency else 0,
+            "mean_wall_seconds_per_case": latency.mean_wall_seconds_per_case if latency else 0,
+        },
         "results": {
             "total_cases": result.total_cases,
             "protocol_pass_rate": result.protocol_pass_rate,

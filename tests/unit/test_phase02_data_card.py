@@ -37,6 +37,5 @@ def test_data_card_contains_all_required_fields(tmp_path: Path):
     assert card["frozen_suite"] is False
     assert "no_sft_dpo_training" in card
     assert card["no_sft_dpo_training"] is True
-    assert "no_model_downloaded" in card
-    assert "no_real_inference" in card
     assert "no_training" in card
+    assert card["no_training"] is True

@@ -1,0 +1,14 @@
+﻿run_id: phase02_4b_instruct_2507_unstructured_frozen
+cases_path: data/eval/frozen_test.jsonl
+backend_config_path: configs/inference/llama_cpp_4b_instruct_2507_cpu.yaml
+manifest_path: data/eval/frozen_test.manifest.json
+output_dir: reports/generated/phase02/unstructured/4b_instruct_2507/frozen_test
+model_id: Qwen/Qwen3-4B-Instruct-2507
+suite_id: phase02_frozen_test_v1
+device: cpu
+runtime: llama.cpp
+model_format: gguf
+quantization: Q4_K_M
+gpu_layers: 0
+notes: "Phase 02 Frozen Test: Qwen3-4B-Instruct-2507 Q4_K_M without JSON Schema constrained decoding"
+tags: ["base_benchmark", "4b", "instruct_2507", "unstructured", "frozen", "llama_cpp", "cpu"]

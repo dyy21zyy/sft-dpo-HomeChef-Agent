@@ -1,14 +1,11 @@
 """Phase 04 Task 1 — Training config contract validator tests."""
 
-import json
 from pathlib import Path
 
-import pytest
 import yaml
 
 from homechef_booking.training.config import (
     DatasetRegistry,
-    TrainingRunSpec,
     load_training_run_spec,
     validate_training_run_spec,
 )
@@ -29,8 +26,8 @@ def test_sft_config_uses_spec_defaults_for_qwen3_0_6b():
     assert spec.cutoff_len == 2048
     assert spec.per_device_train_batch_size == 2
     assert spec.per_device_eval_batch_size == 2
-    assert spec.train_dataset_path == Path("data/processed/phase03_sft_v0.1_train.jsonl")
-    assert spec.eval_dataset_path == Path("data/processed/phase03_sft_v0.1_val.jsonl")
+    assert spec.train_dataset_path == Path("data/processed/sft/v0.3/train.jsonl")
+    assert spec.eval_dataset_path == Path("data/processed/sft/v0.3/val.jsonl")
     assert spec.template == "qwen3"
     assert spec.enable_thinking is False
     assert spec.train_on_prompt is False
@@ -58,8 +55,8 @@ def test_sft_config_uses_spec_defaults_for_qwen3_1_7b():
     assert spec.lora_rank == 16
     assert spec.learning_rate == 1.0e-4
     assert spec.num_train_epochs == 3
-    assert spec.train_dataset_path == Path("data/processed/phase03_sft_v0.1_train.jsonl")
-    assert spec.eval_dataset_path == Path("data/processed/phase03_sft_v0.1_val.jsonl")
+    assert spec.train_dataset_path == Path("data/processed/sft/v0.3/train.jsonl")
+    assert spec.eval_dataset_path == Path("data/processed/sft/v0.3/val.jsonl")
     assert spec.per_device_train_batch_size == 2
     assert spec.per_device_eval_batch_size == 2
     assert validate_training_run_spec(spec) == []
@@ -74,7 +71,7 @@ def test_training_config_rejects_frozen_test_as_train_dataset(tmp_path: Path):
         "stage": "sft",
         "model_name_or_path": "Qwen/Qwen3-0.6B-Base",
         "train_dataset_path": "data/eval/frozen_test.jsonl",
-        "eval_dataset_path": "data/processed/phase03_sft_v0.1_val.jsonl",
+        "eval_dataset_path": "data/processed/sft/v0.3/val.jsonl",
     }
     path.write_text(yaml.dump(spec_dict), encoding="utf-8")
     spec = load_training_run_spec(path)
@@ -88,7 +85,7 @@ def test_training_config_rejects_diagnostic_dev_as_train_dataset(tmp_path: Path)
         "stage": "sft",
         "model_name_or_path": "Qwen/Qwen3-0.6B-Base",
         "train_dataset_path": "data/dev/diagnostic_dev.jsonl",
-        "eval_dataset_path": "data/processed/phase03_sft_v0.1_val.jsonl",
+        "eval_dataset_path": "data/processed/sft/v0.3/val.jsonl",
     }
     path.write_text(yaml.dump(spec_dict), encoding="utf-8")
     spec = load_training_run_spec(path)
@@ -101,7 +98,7 @@ def test_training_config_rejects_eval_suite_as_eval_dataset(tmp_path: Path):
     spec_dict = {
         "stage": "sft",
         "model_name_or_path": "Qwen/Qwen3-0.6B-Base",
-        "train_dataset_path": "data/processed/phase03_sft_v0.1_train.jsonl",
+        "train_dataset_path": "data/processed/sft/v0.3/train.jsonl",
         "eval_dataset_path": "data/eval/frozen_test.jsonl",
     }
     path.write_text(yaml.dump(spec_dict), encoding="utf-8")
@@ -116,7 +113,7 @@ def test_training_config_rejects_phase02_benchmark_output_as_train_dataset(tmp_p
         "stage": "sft",
         "model_name_or_path": "Qwen/Qwen3-0.6B-Base",
         "train_dataset_path": "reports/generated/phase02/mock_results.jsonl",
-        "eval_dataset_path": "data/processed/phase03_sft_v0.1_val.jsonl",
+        "eval_dataset_path": "data/processed/sft/v0.3/val.jsonl",
     }
     path.write_text(yaml.dump(spec_dict), encoding="utf-8")
     spec = load_training_run_spec(path)
@@ -132,8 +129,8 @@ def test_training_config_rejects_unknown_stage(tmp_path: Path):
     spec_dict = {
         "stage": "rlhf",
         "model_name_or_path": "Qwen/Qwen3-0.6B-Base",
-        "train_dataset_path": "data/processed/phase03_sft_v0.1_train.jsonl",
-        "eval_dataset_path": "data/processed/phase03_sft_v0.1_val.jsonl",
+        "train_dataset_path": "data/processed/sft/v0.3/train.jsonl",
+        "eval_dataset_path": "data/processed/sft/v0.3/val.jsonl",
     }
     path.write_text(yaml.dump(spec_dict), encoding="utf-8")
     spec = load_training_run_spec(path)
@@ -148,8 +145,8 @@ def test_training_config_rejects_missing_model(tmp_path: Path):
     path = tmp_path / "no_model.yaml"
     spec_dict = {
         "stage": "sft",
-        "train_dataset_path": "data/processed/phase03_sft_v0.1_train.jsonl",
-        "eval_dataset_path": "data/processed/phase03_sft_v0.1_val.jsonl",
+        "train_dataset_path": "data/processed/sft/v0.3/train.jsonl",
+        "eval_dataset_path": "data/processed/sft/v0.3/val.jsonl",
     }
     path.write_text(yaml.dump(spec_dict), encoding="utf-8")
     spec = load_training_run_spec(path)
@@ -162,7 +159,7 @@ def test_training_config_rejects_missing_train_dataset(tmp_path: Path):
     spec_dict = {
         "stage": "sft",
         "model_name_or_path": "Qwen/Qwen3-0.6B-Base",
-        "eval_dataset_path": "data/processed/phase03_sft_v0.1_val.jsonl",
+        "eval_dataset_path": "data/processed/sft/v0.3/val.jsonl",
     }
     path.write_text(yaml.dump(spec_dict), encoding="utf-8")
     spec = load_training_run_spec(path)
@@ -178,8 +175,8 @@ def test_training_config_rejects_batch_size_not_2(tmp_path: Path):
     spec_dict = {
         "stage": "sft",
         "model_name_or_path": "Qwen/Qwen3-0.6B-Base",
-        "train_dataset_path": "data/processed/phase03_sft_v0.1_train.jsonl",
-        "eval_dataset_path": "data/processed/phase03_sft_v0.1_val.jsonl",
+        "train_dataset_path": "data/processed/sft/v0.3/train.jsonl",
+        "eval_dataset_path": "data/processed/sft/v0.3/val.jsonl",
         "per_device_train_batch_size": 8,
     }
     path.write_text(yaml.dump(spec_dict), encoding="utf-8")
@@ -193,12 +190,18 @@ def test_training_config_rejects_batch_size_not_2(tmp_path: Path):
 
 def test_dataset_registry_loads_and_validates():
     registry = DatasetRegistry.load(Path("configs/training/phase04_dataset_info.json"))
+    # Historical v0.1 entries preserved.
     assert "homechef_phase03_sft_v0_1" in registry.datasets
     assert "homechef_phase03_dpo_targeted_v0_1" in registry.datasets
-    sft_entry = registry.datasets["homechef_phase03_sft_v0_1"]
+    # Formal v0.3 entries present.
+    assert "homechef_sft_v03_train" in registry.datasets
+    assert "homechef_sft_v03_val" in registry.datasets
+    assert "homechef_dpo_v03_train" in registry.datasets
+    assert "homechef_dpo_v03_val" in registry.datasets
+    sft_entry = registry.datasets["homechef_sft_v03_train"]
     assert sft_entry["formatting"] == "sharegpt"
     assert sft_entry["columns"]["messages"] == "messages"
-    dpo_entry = registry.datasets["homechef_phase03_dpo_targeted_v0_1"]
+    dpo_entry = registry.datasets["homechef_dpo_v03_train"]
     assert dpo_entry["formatting"] == "sharegpt"
     assert dpo_entry["ranking"] is True
     assert dpo_entry["columns"]["chosen"] == "chosen"

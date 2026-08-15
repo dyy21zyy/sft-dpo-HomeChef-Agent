@@ -27,6 +27,8 @@ inference = [
   "transformers>=4.45.0",
   "torch>=2.4.0",
   "accelerate>=0.34.0",
+  # Phase04 Structured Output (phase04_hf_backend constrained decoding).
+  "lm-format-enforcer>=0.10.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -43,6 +45,7 @@ ignore = ["E501"]
 [tool.ruff.lint.per-file-ignores]
 "scripts/*" = ["E501", "B007", "E402"]
 "tests/*" = ["E501", "F841"]
+"src/homechef_booking/data/generator.py" = ["F811"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

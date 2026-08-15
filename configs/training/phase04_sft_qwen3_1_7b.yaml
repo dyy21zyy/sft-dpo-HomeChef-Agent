@@ -1,7 +1,12 @@
-# Phase 04 SFT Training Config — Qwen3-1.7B-Base
+# Phase 04 SFT Training Config — Qwen3-1.7B-Base (FORMAL)
 # SPEC-approved defaults. Do not modify without ChatGPT approval.
+# Formal experiment boundary: FORMAL_MODELS=[1.7B, 4B], v0.3 only.
+# model_id is the Phase02 final actual model.
 
 stage: sft
+experiment_class: formal
+# do_train is execution control (required) — not an experiment hyperparameter.
+do_train: true
 model_name_or_path: Qwen/Qwen3-1.7B-Base
 
 # LoRA
@@ -42,6 +47,9 @@ greater_is_better: false
 save_total_limit: 2
 plot_loss: true
 
-# Datasets
-train_dataset_path: data/processed/phase03_sft_v0.1_train.jsonl
-eval_dataset_path: data/processed/phase03_sft_v0.1_val.jsonl
+# Datasets (Phase 03 v0.3 frozen)
+train_dataset_path: data/processed/sft/v0.3/train.jsonl
+eval_dataset_path: data/processed/sft/v0.3/val.jsonl
+
+# Output (checkpoint-best is the DPO source checkpoint)
+output_dir: experiments/phase04/sft_qwen3_1_7b

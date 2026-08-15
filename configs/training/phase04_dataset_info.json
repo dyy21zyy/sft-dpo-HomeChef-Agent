@@ -5,11 +5,13 @@
     "columns": {
       "messages": "messages"
     },
-    "role_tag": "role",
-    "content_tag": "content",
-    "user_tag": "user",
-    "assistant_tag": "assistant",
-    "system_tag": "system"
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
   },
   "homechef_phase03_dpo_targeted_v0_1": {
     "file_name": "data/processed/phase03_dpo_targeted_v0.1_train.jsonl",
@@ -20,10 +22,74 @@
       "chosen": "chosen",
       "rejected": "rejected"
     },
-    "role_tag": "role",
-    "content_tag": "content",
-    "user_tag": "user",
-    "assistant_tag": "assistant",
-    "system_tag": "system"
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
+  },
+  "homechef_sft_v03_train": {
+    "file_name": "data/processed/sft/v0.3/train.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
+  },
+  "homechef_sft_v03_val": {
+    "file_name": "data/processed/sft/v0.3/val.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
+  },
+  "homechef_dpo_v03_train": {
+    "file_name": "data/processed/dpo/v0.3/train.jsonl",
+    "formatting": "sharegpt",
+    "ranking": true,
+    "columns": {
+      "prompt": "prompt",
+      "chosen": "chosen",
+      "rejected": "rejected"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
+  },
+  "homechef_dpo_v03_val": {
+    "file_name": "data/processed/dpo/v0.3/val.jsonl",
+    "formatting": "sharegpt",
+    "ranking": true,
+    "columns": {
+      "prompt": "prompt",
+      "chosen": "chosen",
+      "rejected": "rejected"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
   }
 }

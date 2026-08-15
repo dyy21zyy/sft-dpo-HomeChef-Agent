@@ -131,7 +131,7 @@ def compute_dpo_train_val_overlap(train_path: Path | None, val_path: Path | None
 def _count_lines(path: Path | None) -> int:
     if path is None or not path.exists():
         return 0
-    return len([l for l in path.read_text(encoding="utf-8").splitlines() if l.strip()])
+    return len([line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()])
 
 
 def _compute_target_distribution(train_path: Path, val_path: Path) -> dict[str, int]:

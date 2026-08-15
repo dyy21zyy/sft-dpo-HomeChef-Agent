@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import copy
 import hashlib
 import json
 from pathlib import Path
 
 from homechef_booking.data.dataset_schema import DpoPair, SftMessage
-from homechef_booking.schemas.decision import FinalDecision
 from homechef_booking.data.raw_sample import RawBookingSample
 from homechef_booking.data.sft_render import canonical_decision_json
 from homechef_booking.prompts import PromptBuilder
+from homechef_booking.schemas.decision import FinalDecision
 
 
 def _sha256(text: str) -> str:
@@ -19,6 +18,17 @@ def _sha256(text: str) -> str:
 
 
 def perturb_for_heuristic(raw: RawBookingSample, heuristic: str):
+    """v0.2: H1-H8 perturbation with proper semantic taxonomy.
+
+    H1 Chef Hallucination — fabricated chef identity
+    H2 Wrong Tool Timing — valid ToolCallDecision when final is correct
+    H3 State Corruption — stale chef_id + wrong service_date
+    H4 Dietary Constraint Violation — clears dietary_constraints
+    H5 Relative Time Error — service_date offset by ±1 day
+    H6 Confirmation Error — unauthorized booking confirmation
+    H7 Wrong Tool Fact — chef from outside tool_result evidence
+    H8 Candidate Order — reversed candidate_chefs
+    """
     expected = raw.expected.model_copy(deep=True)
     booking = expected.booking_state if hasattr(expected, "booking_state") else None
 
@@ -35,20 +45,64 @@ def perturb_for_heuristic(raw: RawBookingSample, heuristic: str):
                            "budget_min": None, "budget_max": None, "menu": [],
                            "ingredient_purchase": None, "dietary_constraints": [], "occasion": None},
             )
-    elif heuristic == "H3" and booking:
-        booking.chef_id = "chef_stale_001"
-        booking.service_date = "2026-01-01"
-    elif heuristic == "H4" and booking:
-        booking.dietary_constraints = []
-    elif heuristic == "H5" and booking:
-        booking.service_date = "2026-01-01"
-        booking.start_time = None
+    elif heuristic == "H3":
+        from homechef_booking.schemas.decision import ToolCallDecision
+        if isinstance(expected, ToolCallDecision) and hasattr(expected, "arguments"):
+            expected.arguments.chef_name = "chef_stale_001"
+            expected.arguments.service_date = "2026-01-01"
+        elif booking:
+            booking.chef_id = "chef_stale_001"
+            booking.service_date = "2026-01-01"
+    elif heuristic == "H4":
+        from homechef_booking.schemas.decision import ToolCallDecision
+        if isinstance(expected, ToolCallDecision) and hasattr(expected, "arguments"):
+            expected.arguments.dietary_constraints = []
+        elif booking:
+            booking.dietary_constraints = []
+    elif heuristic == "H5":
+        # v0.2: Relative Time Error — offset service_date by +1 day
+        from datetime import date, timedelta
+
+        from homechef_booking.schemas.decision import ToolCallDecision
+        if isinstance(expected, ToolCallDecision) and hasattr(expected, "arguments"):
+            # ToolCallDecision: modify service_date in arguments
+            sd = expected.arguments.service_date
+            if sd:
+                try:
+                    d = date.fromisoformat(sd)
+                    expected.arguments.service_date = (d + timedelta(days=1)).isoformat()
+                except (ValueError, TypeError):
+                    expected.arguments.service_date = "2026-01-01"
+            else:
+                expected.arguments.service_date = "2026-01-01"
+        elif booking:
+            # FinalDecision: modify booking_state.service_date
+            sd = booking.service_date
+            if sd:
+                try:
+                    d = date.fromisoformat(sd)
+                    booking.service_date = (d + timedelta(days=1)).isoformat()
+                except (ValueError, TypeError):
+                    booking.service_date = "2026-01-01"
+            else:
+                booking.service_date = "2026-01-01"
     elif heuristic == "H6" and booking:
         booking.confirmation = True
         if hasattr(expected, "reply_type"):
             expected.reply_type = "booking_authorized"
-    elif heuristic == "H7" and hasattr(expected, "candidate_chefs"):
-        expected.candidate_chefs = list(reversed(expected.candidate_chefs)) if expected.candidate_chefs else []
+    elif heuristic == "H7":
+        # v0.2: Wrong Tool Fact — replace candidate_chefs with chef from outside evidence
+        if hasattr(expected, "candidate_chefs") and expected.candidate_chefs:
+            from homechef_booking.schemas.booking import CandidateChef
+            fake = CandidateChef(chef_id="chef_outside_777", chef_name="不在结果中的厨师")
+            expected.candidate_chefs = [fake]
+        elif booking and booking.chef_id:
+            booking.chef_id = "chef_outside_777"
+            booking.chef_name = "不在结果中的厨师"
+    elif heuristic == "H8":
+        # v0.2: Candidate Order Error — reverse candidate_chefs
+        if hasattr(expected, "candidate_chefs") and expected.candidate_chefs:
+            expected.candidate_chefs = list(reversed(expected.candidate_chefs))
 
     return expected
 
@@ -59,7 +113,7 @@ def build_dpo_pairs(raw: RawBookingSample) -> list[DpoPair]:
     sft_prompt = [SftMessage(role=str(msg["role"]), content=str(msg.get("content", ""))) for msg in prompt_messages]
     chosen = canonical_decision_json(raw.expected)
     for heuristic in raw.dpo_targets:
-        if heuristic not in {"H1", "H2", "H3", "H4", "H5", "H6", "H7"}:
+        if heuristic not in {"H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8"}:
             continue
         rejected_obj = perturb_for_heuristic(raw, heuristic)
         rejected = canonical_decision_json(rejected_obj)

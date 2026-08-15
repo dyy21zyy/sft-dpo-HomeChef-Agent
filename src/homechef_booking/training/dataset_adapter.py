@@ -155,3 +155,131 @@ def validate_dpo_for_training(path: Path, expected_count: int) -> DatasetPreflig
         passed=passed,
         errors=errors,
     )
+
+
+# ── Shared SFT row -> LLaMA-Factory sharegpt converter ───────────────────────
+# This is the SINGLE converter shared by the formal Phase04 derived-dataset
+# builder and the CPU dry-run (scripts/train/dryrun.py). Do NOT write a third
+# conversion logic.
+
+_TOOL_RESULT_MARKER = "[TOOL_RESULT]"
+_USER_FOLLOWUP_MARKER = "[USER_FOLLOWUP]"
+_ASSISTANT_MARKER = "[ASSISTANT]"
+
+
+def convert_sft_row_to_llamafactory_format(row: dict) -> dict:
+    """Convert a canonical Phase03 SFT row into LLaMA-Factory 0.9.5 sharegpt.
+
+    Deterministic context adaptation for tool-context samples:
+
+        system
+        user
+        assistant(content="")     <- empty placeholder, DELETED
+        tool(result)              <- folded into user as [TOOL_RESULT]
+        user(followup)            <- folded into user as [USER_FOLLOWUP]
+        assistant(target)         <- UNCHANGED final assistant target
+
+    Output:
+        system: <original system>
+        user:   <original user>[TOOL_RESULT]<tool>[USER_FOLLOWUP]<followup>
+        assistant: <final target>
+
+    Constraints:
+    - NEVER fabricates function_call / tool_calls from a tool result.
+    - Tool result info is preserved (not lost).
+    - Final assistant target is byte-identical to source.
+    - Empty assistant placeholders are removed.
+    - Rows WITHOUT tool history (system/user/assistant) keep equivalent
+      training semantics.
+    """
+    messages = row.get("messages") or []
+
+    # Final assistant target = last assistant message.
+    last_asst_idx = None
+    for i in range(len(messages) - 1, -1, -1):
+        if messages[i].get("role") == "assistant":
+            last_asst_idx = i
+            break
+    if last_asst_idx is None:
+        target = ""
+        ctx_msgs = messages
+    else:
+        target = messages[last_asst_idx].get("content", "")
+        ctx_msgs = messages[:last_asst_idx]
+
+    # Last system message (the booking contract) -> system role.
+    system_content = None
+    for m in ctx_msgs:
+        if m.get("role") == "system":
+            system_content = m.get("content", "")
+
+    # Build the user context deterministically.
+    user_parts: list[str] = []
+    for m in ctx_msgs:
+        role = m.get("role")
+        content = m.get("content", "")
+        if role == "system":
+            continue  # handled as the system message
+        if role == "assistant" and content in ("", None):
+            continue  # delete empty assistant placeholder
+        if role == "tool":
+            if isinstance(content, (dict, list)):
+                content = json.dumps(content, ensure_ascii=False)
+            user_parts.append(f"{_TOOL_RESULT_MARKER}\n{content}")
+        elif role == "user":
+            user_parts.append(f"{_USER_FOLLOWUP_MARKER}\n{content}")
+        elif role == "assistant":
+            # Non-empty intermediate assistant turn (rare) — keep it.
+            user_parts.append(f"{_ASSISTANT_MARKER}\n{content}")
+        else:
+            user_parts.append(str(content))
+
+    # First user message should not carry the [USER_FOLLOWUP] prefix (it is the
+    # request, not a followup). Re-format: the first user part is the request.
+    if user_parts and user_parts[0].startswith(_USER_FOLLOWUP_MARKER + "\n"):
+        user_parts[0] = user_parts[0][len(_USER_FOLLOWUP_MARKER + "\n"):]
+
+    user_content = "\n\n".join(p for p in user_parts if p.strip())
+
+    out: dict = {"messages": []}
+    if system_content:
+        out["messages"].append({"role": "system", "content": system_content})
+    out["messages"].append({"role": "user", "content": user_content})
+    out["messages"].append({"role": "assistant", "content": target})
+    return out
+
+
+def build_sft_derived_dataset(
+    canonical_path: Path,
+    out_path: Path,
+    manifest_path: Path | None = None,
+) -> dict:
+    """Build a 1:1 derived SFT dataset for LLaMA-Factory.
+
+    Maps each canonical source row to EXACTLY ONE derived sharegpt row
+    (no skip / drop / dedup / merge). Returns a small manifest dict:
+    {"source_rows": N, "derived_rows": N, "mapping": [source_index] }
+    """
+    mapping: list[int] = []
+    with canonical_path.open(encoding="utf-8") as fin, \
+            out_path.open("w", encoding="utf-8") as fout:
+        for source_idx, line in enumerate(fin):
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            derived = convert_sft_row_to_llamafactory_format(row)
+            fout.write(json.dumps(derived, ensure_ascii=False) + "\n")
+            mapping.append(source_idx)
+
+    manifest = {
+        "canonical_path": str(canonical_path),
+        "derived_path": str(out_path),
+        "source_rows": len(mapping),
+        "derived_rows": len(mapping),
+        "mapping": mapping,  # source row index -> derived row index (same order)
+    }
+    if manifest_path is not None:
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    return manifest

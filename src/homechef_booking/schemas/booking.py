@@ -66,6 +66,21 @@ AFFIRMATIVE_ALLOWLIST = frozenset({
     "确认预约",
 })
 
+# Prefixes of natural-language affirmatives (approved in the 25 style anchors,
+# e.g. anchor #8 "可以，就订李师傅吧。"). A user input that starts with any of
+# these is a deterministic affirmative in real Chinese usage.
+AFFIRMATIVE_PREFIXES: tuple[str, ...] = (
+    "可以",
+    "确认",
+    "好的",
+    "行",
+    "没问题",
+    "就订",
+    "订",
+    "就这样",
+    "好，",
+)
+
 
 class CandidateChef(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -142,9 +157,48 @@ def is_info_complete(slot: BookingSlot) -> bool:
 
 
 def is_affirmative(text: str) -> bool:
-    """Check if user input is a deterministic affirmative."""
+    """Check if user input is a deterministic affirmative.
+
+    Recognizes:
+      - an exact AFFIRMATIVE_ALLOWLIST token, OR
+      - a natural-language affirmative that starts with an AFFIRMATIVE_PREFIX
+        (e.g. "可以，就订李师傅吧", "好的，确认预约", "没问题，就他吧"), OR
+      - a conversational hedge that contains a clear affirmative token with NO
+        negation (e.g. "现在想的是，确认哈。", "我这边的意思是，可以，就这么订"),
+        reflecting real Chinese usage while rejecting genuine negations.
+    """
+    if not text:
+        return False
     normalized = text.strip()
-    return normalized in AFFIRMATIVE_ALLOWLIST
+
+    # Exact allowlist match.
+    if normalized in AFFIRMATIVE_ALLOWLIST:
+        return True
+
+    # Negation guard: any negation cue → not affirmative.
+    if any(c in normalized for c in ("不", "别", "取消", "不要", "不用")):
+        return False
+
+    # Prefix match.
+    for prefix in AFFIRMATIVE_PREFIXES:
+        if normalized.startswith(prefix):
+            return True
+
+    # Contains a clear affirmative token (handles conversational hedges).
+    strong_affirm_tokens = (
+        "确认",
+        "没问题",
+        "就订",
+        "就他",
+        "就这个",
+        "就这样",
+        "可以，就",
+        "可以，就这么",
+    )
+    if any(t in normalized for t in strong_affirm_tokens):
+        return True
+
+    return False
 
 
 __all__ = [

@@ -1,22 +1,67 @@
 .venv/
+.venv*/
+venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest*/
 .ruff_cache/
 .mypy_cache/
+.uv_cache*/
 
+models/hf_cache/
 models/base/
 models/adapters/
 models/merged/
 models/gguf/
 models/imatrix/
 
+deployment/llama_cpp/bin/
+deployment/llama_cpp/llama_cpp_src/
+deployment/llama_cpp/convert_hf_to_gguf.py
+
 experiments/runs/
+experiments/phase02/smoke/
+experiments/phase02/dryrun/
+experiments/phase04/configs/*.resolved.yaml
+experiments/phase04/dryrun/
+experiments/phase04/exploratory_currentdata/
+experiments/phase04/**/checkpoint-*/
+experiments/phase04/**/trainer_state.json
+experiments/phase04/**/optimizer.pt
+experiments/phase04/**/scheduler.pt
+experiments/phase04/**/training_args.bin
+experiments/phase04/**/adapter_model.safetensors
+experiments/phase04/**/train_results.json
+experiments/phase04/**/eval_results.json
+experiments/phase04/**/all_results.json
+experiments/**/checkpoint-*/
+experiments/**/trainer_state.json
+experiments/**/optimizer.pt
+experiments/**/scheduler.pt
+experiments/**/training_args.bin
 
 data/tmp/
 data/generated/
+data/calibration/
+data/phase04_derived_sft/
+data/phase04_dryrun_*.jsonl
 
 reports/generated/
 reports/runs/
+reports/phase04/
+reports/phase05/
 
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
 *.log
+*.tmp
+*.temp
+*.bak
+nohup.out
+_*.txt
+_*.py

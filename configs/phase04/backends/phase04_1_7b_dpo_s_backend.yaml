@@ -1,0 +1,11 @@
+backend: phase04_hf
+model_id: Qwen/Qwen3-1.7B-Base
+adapter_name_or_path: experiments/phase04/dpo_qwen3_1_7b/checkpoint-best
+use_structured_output: true
+device: auto
+torch_dtype: bfloat16
+max_model_length: 2048
+max_new_tokens: 512
+model_key: 1_7b
+training_stage: dpo
+model_size: 1.7B

@@ -1,0 +1,11 @@
+{
+  "dataset_version": "phase03_v0.3_sft",
+  "raw_source": "data/raw/phase03_raw_strong_model_600_v0.3.jsonl",
+  "derivation": "deterministic render of validated Raw (no model call)",
+  "train_count": 540,
+  "val_count": 60,
+  "train_sha256": "7e0b8f33ccba4d70e01173746d0a4bbf64f96a13ad65597156496f6b966374e5",
+  "val_sha256": "c93b61a5229529abfd7f6db28fde1193a3fc5679e41bcd6a0f297beb23ecebf3",
+  "renderer": "homechef_booking.data.sft_render.render_sft_sample",
+  "assistant_target": "Raw.expected (canonical decision JSON)"
+}

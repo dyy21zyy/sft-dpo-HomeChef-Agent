@@ -1,7 +1,12 @@
 """Task 1: PromptBuilder tests — first model call, tool continuation, and system rules coverage."""
 
+
+import json
+
 from homechef_booking.prompts import PromptBuilder
+from homechef_booking.schemas.decision import FinalDecision, ToolCallDecision
 from homechef_booking.schemas.runtime import BookingRuntimeInput
+from homechef_booking.schemas.tools import FindChefsInput
 
 FIND_CHEFS_TOOL = {
     "type": "function",
@@ -147,3 +152,57 @@ def test_system_rules_cover_frozen_booking_behavior_contract():
     ]
     for phrase in required_phrases:
         assert phrase in system_content
+
+def test_prompt_builder_includes_machine_output_contract():
+    runtime_input = BookingRuntimeInput.model_validate(
+        {
+            "history": [],
+            "current_state": {
+                "booking_state": {
+                    "service_date": None,
+                    "start_time": None,
+                    "people": None,
+                    "address": None,
+                    "cuisine": None,
+                    "budget_min": None,
+                    "budget_max": None,
+                    "menu": [],
+                    "chef_id": None,
+                    "chef_name": None,
+                    "confirmation": None,
+                    "ingredient_purchase": None,
+                    "dietary_constraints": [],
+                    "occasion": None,
+                },
+                "chef_query_status": "not_checked",
+                "candidate_chefs": [],
+                "awaiting_confirmation": False,
+            },
+            "user_input": "请帮我预约私厨",
+            "current_time": "2026-08-09 18:00",
+            "available_tools": [],
+        }
+    )
+
+    messages = PromptBuilder().build_messages(runtime_input)
+
+    system = json.loads(messages[0]["content"])
+
+    contract = system["output_contract"]
+
+    assert contract["format"] == "exactly_one_raw_json_object"
+    assert contract["no_markdown"] is True
+    assert contract["no_prose"] is True
+    assert contract["allowed_actions"] == ["final", "tool_call"]
+
+    assert set(contract["final_required_keys"]) == set(
+        FinalDecision.model_fields
+    )
+
+    assert set(contract["tool_call_required_keys"]) == set(
+        ToolCallDecision.model_fields
+    )
+
+    assert set(contract["find_chefs_argument_keys"]) == set(
+        FindChefsInput.model_fields
+    )

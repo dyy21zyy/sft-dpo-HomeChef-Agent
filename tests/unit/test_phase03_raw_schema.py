@@ -134,7 +134,7 @@ def test_raw_sample_rejects_invalid_contract_id():
     }, ensure_ascii=False)
     try:
         parse_raw_sample_line(line)
-        assert False, "Should have raised ValueError"
+        raise AssertionError("Should have raised ValueError")
     except ValueError:
         pass
 
@@ -175,11 +175,11 @@ def test_raw_sample_rejects_invalid_dpo_target():
             "generated_at": "2026-08-10T00:00:00Z",
         },
         "review": {"status": "machine_validated", "reviewer": None, "notes": []},
-        "dpo_targets": ["H9"],
+        "dpo_targets": ["H99"],
     }, ensure_ascii=False)
     try:
         parse_raw_sample_line(line)
-        assert False, "Should have raised ValueError"
+        raise AssertionError("Should have raised ValueError")
     except ValueError:
         pass
 
@@ -227,7 +227,7 @@ def test_raw_sample_rejects_output_kind_mismatch():
     }, ensure_ascii=False)
     try:
         parse_raw_sample_line(line)
-        assert False, "Should have raised ValueError"
+        raise AssertionError("Should have raised ValueError")
     except ValueError:
         pass
 

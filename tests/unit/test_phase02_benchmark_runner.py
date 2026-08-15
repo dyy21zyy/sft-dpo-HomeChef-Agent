@@ -5,6 +5,7 @@ from pathlib import Path
 from homechef_booking.evaluation.benchmark_runner import (
     BenchmarkConfig,
     BenchmarkResult,
+    LatencyMetrics,
     run_benchmark,
 )
 
@@ -24,6 +25,28 @@ def test_benchmark_config_loads_from_yaml(tmp_path: Path):
     assert config.model_id == "Qwen/Qwen3-0.6B-Base"
 
 
+def test_benchmark_config_loads_llama_cpp_fields(tmp_path: Path):
+    config_yaml = tmp_path / "llama_bench.yaml"
+    config_yaml.write_text("\n".join([
+        "run_id: test_llama",
+        "cases_path: data/eval/frozen_test.jsonl",
+        "backend_config_path: configs/inference/llama_cpp_0_6b_cpu.yaml",
+        "manifest_path: data/eval/frozen_test.manifest.json",
+        "output_dir: reports/generated",
+        "model_id: Qwen/Qwen3-0.6B-Base",
+        "device: cpu",
+        "runtime: llama.cpp",
+        "model_format: gguf",
+        "quantization: Q8_0",
+        "gpu_layers: 0",
+    ]), encoding="utf-8")
+    config = BenchmarkConfig.load_yaml(config_yaml)
+    assert config.runtime == "llama.cpp"
+    assert config.model_format == "gguf"
+    assert config.quantization == "Q8_0"
+    assert config.gpu_layers == 0
+
+
 def test_benchmark_result_model_has_all_fields():
     result = BenchmarkResult(
         run_id="test_run",
@@ -40,12 +63,21 @@ def test_benchmark_result_model_has_all_fields():
         assertion_pass_rates={"tool_fact_grounded": 0.95},
         critical_error_distribution={"chef_fabrication": 5},
         metrics={"tool_arguments_accuracy": 0.95},
-        latency_metrics={"mean_latency_ms": 500.0},
-        hardware_info={"device": "cpu", "torch_dtype": "float32"},
+        latency_metrics=LatencyMetrics(
+            mean_latency_ms=500.0,
+            performance_sample_count=100,
+            successful_inference_cases=115,
+            failed_inference_cases=5,
+        ),
+        hardware_info={"device": "cpu", "runtime": "llama.cpp"},
     )
     assert result.run_id == "test_run"
     assert result.total_cases == 120
     assert result.metrics["tool_arguments_accuracy"] == 0.95
+    assert result.latency_metrics is not None
+    assert result.latency_metrics.mean_latency_ms == 500.0
+    assert result.latency_metrics.successful_inference_cases == 115
+    assert result.latency_metrics.failed_inference_cases == 5
 
 
 def test_run_benchmark_mock_produces_complete_result(tmp_path: Path):

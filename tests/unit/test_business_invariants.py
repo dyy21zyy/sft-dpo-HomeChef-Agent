@@ -431,8 +431,13 @@ def test_deterministic_affirmative_allowlist() -> None:
     assert is_affirmative("确认") is True
     assert is_affirmative("好的") is True
     assert is_affirmative("可以") is True
-    assert is_affirmative("嗯，就这样") is False
+    # Natural affirmative with conversational hedge contains a strong token.
+    assert is_affirmative("嗯，就这样") is True
+    assert is_affirmative("现在想的是，确认哈") is True
+    # Negations must be rejected.
     assert is_affirmative("不确认") is False
+    assert is_affirmative("不可以") is False
+    assert is_affirmative("不行") is False
 
 
 def test_mutation_dominates_confirmation() -> None:

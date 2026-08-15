@@ -1,0 +1,12 @@
+run_id: phase04_4b_dpo_u
+model_key: 4b
+model_id: Qwen/Qwen3-4B-Instruct-2507
+stage: dpo
+variant: u
+use_structured_output: false
+checkpoint_path: experiments/phase04/dpo_qwen3_4b/checkpoint-best
+adapter_name_or_path: experiments/phase04/dpo_qwen3_4b/checkpoint-best
+output_dir: reports/generated/phase04/matrix/phase04_4b_dpo_u
+backend_config_path: configs/phase04/backends/phase04_4b_dpo_u_backend.yaml
+cases_path: data/eval/frozen_test.jsonl
+manifest_path: data/eval/frozen_test.manifest.json

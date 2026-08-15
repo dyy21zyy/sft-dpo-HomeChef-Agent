@@ -1,11 +1,14 @@
 run_id: phase02_base_4b_frozen
 cases_path: data/eval/frozen_test.jsonl
-backend_config_path: configs/inference/hf_4b.yaml
+backend_config_path: configs/inference/llama_cpp_4b_cpu.yaml
 manifest_path: data/eval/frozen_test.manifest.json
 output_dir: reports/generated/phase02/base_4b/frozen_test
 model_id: Qwen/Qwen3-4B-Base
 suite_id: phase02_frozen_test_v1
-device: cuda
-torch_dtype: bfloat16
-notes: "Phase 02 M0: Qwen3-4B-Base on Frozen Test (120 cases)"
-tags: ["base_benchmark", "4b", "frozen"]
+device: cpu
+runtime: llama.cpp
+model_format: gguf
+quantization: Q4_K_M
+gpu_layers: 0
+notes: "Phase 02 M0: Qwen3-4B-Base Q4_K_M GGUF on llama.cpp CPU (Frozen Test 120 cases)"
+tags: ["base_benchmark", "4b", "frozen", "llama_cpp", "cpu"]

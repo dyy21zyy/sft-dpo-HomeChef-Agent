@@ -30,6 +30,68 @@
       "system_tag": "system"
     }
   },
+  "homechef_sft_v03_train": {
+    "file_name": "processed/sft/v0.3/train.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
+  },
+  "homechef_sft_v03_val": {
+    "file_name": "processed/sft/v0.3/val.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
+  },
+  "homechef_dpo_v03_train": {
+    "file_name": "processed/dpo/v0.3/train.jsonl",
+    "formatting": "sharegpt",
+    "ranking": true,
+    "columns": {
+      "prompt": "prompt",
+      "chosen": "chosen",
+      "rejected": "rejected"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
+  },
+  "homechef_dpo_v03_val": {
+    "file_name": "processed/dpo/v0.3/val.jsonl",
+    "formatting": "sharegpt",
+    "ranking": true,
+    "columns": {
+      "prompt": "prompt",
+      "chosen": "chosen",
+      "rejected": "rejected"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
+  },
   "phase04_dryrun_sft_1row": {
     "file_name": "phase04_dryrun_sft_1row.jsonl",
     "formatting": "sharegpt",
@@ -58,6 +120,34 @@
       "content_tag": "value",
       "user_tag": "user",
       "assistant_tag": "assistant"
+    }
+  },
+  "homechef_sft_v03_derived_train": {
+    "file_name": "phase04_derived_sft/train.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
+    }
+  },
+  "homechef_sft_v03_derived_val": {
+    "file_name": "phase04_derived_sft/val.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant",
+      "system_tag": "system"
     }
   }
 }

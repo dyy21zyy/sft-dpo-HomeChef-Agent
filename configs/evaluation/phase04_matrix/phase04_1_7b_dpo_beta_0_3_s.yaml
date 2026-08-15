@@ -1,0 +1,13 @@
+run_id: phase04_1_7b_dpo_beta_0_3_s
+model_key: 1_7b
+model_id: Qwen/Qwen3-1.7B-Base
+stage: dpo
+variant: s
+use_structured_output: true
+checkpoint_path: experiments/phase04/dpo_qwen3_1_7b_beta_0_3/checkpoint-best
+adapter_name_or_path: experiments/phase04/dpo_qwen3_1_7b_beta_0_3/checkpoint-best
+output_dir: reports/generated/phase04/matrix/phase04_1_7b_dpo_beta_0_3_s
+backend_config_path: configs/phase04/backends/phase04_1_7b_dpo_beta_0_3_s_backend.yaml
+pref_beta: 0.3
+cases_path: data/eval/frozen_test.jsonl
+manifest_path: data/eval/frozen_test.manifest.json

@@ -7,10 +7,10 @@ as training or evaluation data.
 
 import json
 from pathlib import Path
-from typing import Any, Annotated
+from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, BeforeValidator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def _coerce_stage(v: Any) -> str:
@@ -50,7 +50,21 @@ class TrainingRunSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     stage: str = Field(default="sft")
-    model_name_or_path: str = Field(default="Qwen/Qwen3-0.6B-Base")
+    # do_train / do_eval are EXECUTION CONTROL, not experiment hyperparameters.
+    # do_train must be true for a training run (LLaMA-Factory skips the training
+    # branch if false). do_eval preserves formal eval semantics; dry-run forces
+    # do_eval=false because it only validates the engineering pipeline.
+    do_train: bool = Field(default=True)
+    do_eval: bool = Field(default=True)
+    # experiment_class distinguishes historical (reproduction-only) configs from
+    # the Phase 04 formal experiment. Default "historical" keeps old 0.6B / v0.1
+    # configs loadable and enforceable-free, so they stay available for
+    # reproduction. Formal configs explicitly set experiment_class: formal.
+    experiment_class: str = Field(default="historical")
+    # model_name_or_path has no default: a training run MUST name the base model.
+    # Real configs always specify it; leaving it None lets validation reject a
+    # config that omits the model instead of silently substituting a default.
+    model_name_or_path: str | None = Field(default=None)
 
     # ── LoRA ──
     finetuning_type: str = Field(default="lora")
@@ -123,9 +137,13 @@ class TrainingRunSpec(BaseModel):
 
 
 def _is_forbidden_path(p: Path) -> list[str]:
-    """Check if a path is forbidden for training. Returns list of error messages."""
+    """Check if a path is forbidden for training. Returns list of error messages.
+
+    Paths are matched on a forward-slash normalized string so the check is
+    platform-independent (Windows ``Path`` uses backslashes).
+    """
     errors = []
-    path_str = str(p)
+    path_str = str(p).replace("\\", "/")
     # Check eval-only paths
     for forbidden_path, msg in _EVAL_ONLY_PATHS.items():
         if forbidden_path in path_str:
@@ -183,8 +201,10 @@ def validate_training_run_spec(spec: TrainingRunSpec) -> list[str]:
         if not spec.eval_dataset_path.exists():
             errors.append(f"eval_dataset_path does not exist: {spec.eval_dataset_path}")
 
-    # Batch size must be 2 (skip for engineering dry-run configs)
-    if not spec.engineering_dryrun_only:
+    # SFT batch size must be 2 per the training contract (skip for engineering
+    # dry-run configs). DPO is exempt: the formal Phase04 DPO beta-sweep spec
+    # uses per_device batch=1/1 (see phase04_dpo_*_beta_*.yaml).
+    if spec.stage == "sft" and not spec.engineering_dryrun_only:
         if spec.per_device_train_batch_size != 2:
             errors.append(f"per_device_train_batch_size must be 2, got {spec.per_device_train_batch_size}.")
         if spec.per_device_eval_batch_size != 2:

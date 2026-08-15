@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from homechef_booking.data.dataset_schema import DatasetDataCard, DatasetManifest
@@ -28,10 +28,10 @@ def write_dataset_manifest(
     sft_train_val_overlap_by_hash: int = 0,
     dpo_train_val_overlap_by_hash: int = 0,
 ) -> Path:
-    raw_count = len([l for l in raw_path.read_text(encoding="utf-8").splitlines() if l.strip()])
+    raw_count = len([line for line in raw_path.read_text(encoding="utf-8").splitlines() if line.strip()])
     manifest = DatasetManifest(
         dataset_version=dataset_version,
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
         raw_path=str(raw_path),
         raw_sha256=compute_sha256(raw_path),
         raw_count=raw_count,
@@ -76,7 +76,7 @@ def write_dataset_data_card(
 ) -> Path:
     card = DatasetDataCard(
         dataset_version=dataset_version,
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
         frozen_eval_overlap=frozen_eval_overlap,
         diagnostic_dev_overlap=diagnostic_dev_overlap,
         phase02_base_benchmark_dependency=phase02_dependency_status,
@@ -94,7 +94,7 @@ def write_dataset_data_card(
 def _count_lines(path: Path | None) -> int:
     if path is None or not path.exists():
         return 0
-    return len([l for l in path.read_text(encoding="utf-8").splitlines() if l.strip()])
+    return len([line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()])
 
 
 def write_targeted_dpo_manifest(
@@ -118,7 +118,7 @@ def write_targeted_dpo_manifest(
         "manifest_type": "targeted_dpo",
         "dataset_version": dataset_version,
         "contract_id": "homechef-booking-v1",
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "dpo_policy": "targeted",
         "dpo_policy_description": "High-risk heuristics only: H1 (fabricated chef), H3 (stale chef ID), H4 (dietary constraint loss), H5 (query dependency mutation), H6 (unauthorized booking confirmation), H7 (candidate order mutation)",
         "dpo_policy_exclusions": "H2 (action type swap — structural, not business safety). tool_error_booking_paused is not covered by current targeted DPO v0.1.",
@@ -162,7 +162,7 @@ def write_targeted_dpo_data_card(
         "phase": "03",
         "contract_id": "homechef-booking-v1",
         "dataset_version": dataset_version,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "description": "Targeted DPO is an experimental addition to the dense DPO v0.1 dataset. It covers only high-risk preference boundary corrections.",
         "dpo_not_full_raw_coverage": True,
         "targeted_dpo_purpose": "High-risk preference boundary correction only",

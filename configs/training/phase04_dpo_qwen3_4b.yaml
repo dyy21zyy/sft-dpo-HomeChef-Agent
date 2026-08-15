@@ -1,0 +1,59 @@
+# Phase 04 DPO Training Config — Qwen3-4B-Instruct-2507 (FORMAL)
+# SPEC-approved DPO defaults (beta=0.1, sigmoid, lr=5e-6, epochs=1).
+# Do not modify without approval.
+#
+# Formal boundary: FORMAL_MODELS=[1.7B, 4B], FORMAL_DATASET_VERSION=v0.3.
+# model_id is the Phase02 FINAL actual 4B model (Qwen/Qwen3-4B-Instruct-2507),
+# NOT Qwen3-4B-Base.
+#
+# Training chain (SPEC-required): Base -> SFT LoRA -> SFT checkpoint -> DPO LoRA.
+# DPO must continue from the corresponding best SFT checkpoint. If it is
+# missing, DPO FAILS (validate_dpo_source_checkpoint); never falls back to Base.
+
+stage: dpo
+experiment_class: formal
+model_name_or_path: Qwen/Qwen3-4B-Instruct-2507
+
+# Continue from the best SFT checkpoint (SFT adapter source).
+# This is the phase04_sft_qwen3_4b output_dir/checkpoint-best.
+adapter_name_or_path: experiments/phase04/sft_qwen3_4b/checkpoint-best
+
+# LoRA
+finetuning_type: lora
+lora_target: all
+lora_rank: 16
+lora_alpha: 32
+lora_dropout: 0.05
+
+# Template: qwen3_nothink is REQUIRED for the Instruct-2507 variant
+# (per Codex Phase04 Release Review round 2). Training and inference/evaluation
+# must use a consistent template.
+template: qwen3_nothink
+# (mask_history is SFT-only per LLaMA-Factory; not valid for DPO)
+
+# Sequence
+cutoff_len: 2048
+
+# Optimization (SPEC-approved DPO values; batch=1 per finetune-spec/Plan)
+learning_rate: 5.0e-6
+num_train_epochs: 1
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 8
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+
+# Precision
+bf16: true
+fp16: false
+
+# DPO preference
+pref_beta: 0.1
+pref_loss: sigmoid
+
+# Datasets (Phase 03 v0.3 frozen: DPO 216/24)
+train_dataset_path: data/processed/dpo/v0.3/train.jsonl
+eval_dataset_path: data/processed/dpo/v0.3/val.jsonl
+
+# Output
+output_dir: experiments/phase04/dpo_qwen3_4b

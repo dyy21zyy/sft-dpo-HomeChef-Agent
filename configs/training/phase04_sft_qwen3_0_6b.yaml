@@ -1,7 +1,10 @@
-# Phase 04 SFT Training Config — Qwen3-0.6B-Base
+# Phase 04 SFT Training Config — Qwen3-0.6B-Base (HISTORICAL)
 # SPEC-approved defaults. Do not modify without ChatGPT approval.
+# historical: preserved for reproduction. NOT part of the Phase04 formal
+# experiment (FORMAL_MODELS=[1.7B, 4B]). Excluded from formal matrix/comparison.
 
 stage: sft
+experiment_class: historical
 model_name_or_path: Qwen/Qwen3-0.6B-Base
 
 # LoRA
@@ -42,6 +45,6 @@ greater_is_better: false
 save_total_limit: 2
 plot_loss: true
 
-# Datasets
-train_dataset_path: data/processed/phase03_sft_v0.1_train.jsonl
-eval_dataset_path: data/processed/phase03_sft_v0.1_val.jsonl
+# Datasets (Phase 03 v0.3 frozen)
+train_dataset_path: data/processed/sft/v0.3/train.jsonl
+eval_dataset_path: data/processed/sft/v0.3/val.jsonl

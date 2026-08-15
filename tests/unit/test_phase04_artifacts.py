@@ -3,15 +3,12 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from homechef_booking.training.artifacts import (
     TrainingArtifactManifest,
     validate_training_artifact_manifest,
     write_training_artifact_manifest,
 )
 from homechef_booking.training.config import load_training_run_spec
-
 
 # ── Training artifact manifest ──────────────────────────────────────────────
 
@@ -22,9 +19,9 @@ def test_training_artifact_manifest_records_dataset_and_contract_hashes():
         stage="sft",
         model_name_or_path="Qwen/Qwen3-0.6B-Base",
         contract_id="homechef-booking-v1",
-        dataset_manifest_path="data/processed/phase03_dataset_manifest.v0.1.json",
-        train_dataset_path="data/processed/phase03_sft_v0.1_train.jsonl",
-        eval_dataset_path="data/processed/phase03_sft_v0.1_val.jsonl",
+        dataset_manifest_path="data/processed/sft/v0.3/manifest.json",
+        train_dataset_path="data/processed/sft/v0.3/train.jsonl",
+        eval_dataset_path="data/processed/sft/v0.3/val.jsonl",
         training_config_path="configs/training/phase04_sft_qwen3_0_6b.yaml",
         output_dir="experiments/phase04/dryrun/sft_qwen3_0_6b",
         max_steps=2,
@@ -47,9 +44,9 @@ def test_artifact_manifest_rejects_missing_approval_id():
         stage="sft",
         model_name_or_path="Qwen/Qwen3-0.6B-Base",
         contract_id="homechef-booking-v1",
-        dataset_manifest_path="data/processed/phase03_dataset_manifest.v0.1.json",
-        train_dataset_path="data/processed/phase03_sft_v0.1_train.jsonl",
-        eval_dataset_path="data/processed/phase03_sft_v0.1_val.jsonl",
+        dataset_manifest_path="data/processed/sft/v0.3/manifest.json",
+        train_dataset_path="data/processed/sft/v0.3/train.jsonl",
+        eval_dataset_path="data/processed/sft/v0.3/val.jsonl",
         training_config_path="configs/training/phase04_sft_qwen3_0_6b.yaml",
         output_dir="experiments/test",
         max_steps=2,
@@ -68,9 +65,9 @@ def test_artifact_manifest_required_fields():
         stage="sft",
         model_name_or_path="Qwen/Qwen3-0.6B-Base",
         contract_id="homechef-booking-v1",
-        dataset_manifest_path="data/processed/phase03_dataset_manifest.v0.1.json",
-        train_dataset_path="data/processed/phase03_sft_v0.1_train.jsonl",
-        eval_dataset_path="data/processed/phase03_sft_v0.1_val.jsonl",
+        dataset_manifest_path="data/processed/sft/v0.3/manifest.json",
+        train_dataset_path="data/processed/sft/v0.3/train.jsonl",
+        eval_dataset_path="data/processed/sft/v0.3/val.jsonl",
         training_config_path="configs/training/phase04_sft_qwen3_0_6b.yaml",
         output_dir="experiments/test",
         max_steps=2,
@@ -96,21 +93,25 @@ def test_dpo_dryrun_config_is_engineering_only():
     assert spec.stage == "dpo"
     assert spec.train_dataset_path is not None
     assert spec.eval_dataset_path is not None
-    assert spec.train_dataset_path.name == "phase03_dpo_targeted_v0.1_train.jsonl"
-    assert spec.eval_dataset_path.name == "phase03_dpo_targeted_v0.1_val.jsonl"
+    assert spec.train_dataset_path.name == "train.jsonl"
+    assert spec.eval_dataset_path.name == "val.jsonl"
     assert spec.max_steps == 2
     assert spec.engineering_dryrun_only is True
     assert spec.pref_beta == 0.1
     assert spec.pref_loss == "sigmoid"
 
 
-def test_dpo_dryrun_config_uses_targeted_dpo_files():
+def test_dpo_dryrun_config_uses_v03_dpo_files():
     spec = load_training_run_spec(Path("configs/training/phase04_dpo_dryrun_beta_0_1.yaml"))
     assert spec.train_dataset_path is not None
     assert spec.eval_dataset_path is not None
-    assert "dpo_targeted" in str(spec.train_dataset_path)
-    assert spec.train_dataset_path.name == "phase03_dpo_targeted_v0.1_train.jsonl"
-    assert spec.eval_dataset_path.name == "phase03_dpo_targeted_v0.1_val.jsonl"
+    # Platform-independent check for the v0.3 DPO directory segment.
+    train_parts = spec.train_dataset_path.parts
+    eval_parts = spec.eval_dataset_path.parts
+    assert "dpo" in train_parts and "v0.3" in train_parts
+    assert "dpo" in eval_parts and "v0.3" in eval_parts
+    assert spec.train_dataset_path.name == "train.jsonl"
+    assert spec.eval_dataset_path.name == "val.jsonl"
 
 
 # ── Dry-run approval gate ───────────────────────────────────────────────────
@@ -159,38 +160,33 @@ def test_dryrun_rejects_invalid_approval_file():
         approval_path.unlink(missing_ok=True)
 
 
-def test_dryrun_dpo_creates_temp_dataset():
-    """dryrun.py DPO mode must create 1-pair temp dataset and invoke llamafactory-cli train."""
-    import subprocess
-    import sys
+def test_dryrun_dpo_renders_sft_adapter_dependency():
+    """DPO dry-run renderer must point adapter_name_or_path at the SFT dry-run
+    adapter (the DPO chain is Base -> SFT adapter -> DPO, never Base -> DPO).
 
-    approval_path = Path("project-log/_test_approval_true.json")
-    approval_path.parent.mkdir(parents=True, exist_ok=True)
-    approval_path.write_text(json.dumps({"approved": True}), encoding="utf-8")
-    try:
-        result = subprocess.run(
-            [sys.executable, "scripts/train/dryrun.py",
-             "--stage", "dpo",
-             "--config", "configs/training/phase04_dpo_dryrun_beta_0_1.yaml",
-             "--sample-count", "1",
-             "--max-steps", "2",
-             "--approval-file", str(approval_path)],
-            capture_output=True,
-            text=True,
+    This is deterministic (does not depend on whether an SFT adapter already
+    exists on disk): it only checks the rendered DPO config's adapter path.
+    """
+    import tempfile
+
+    import yaml
+
+    from scripts.train.dryrun import _dryrun_output_dir, _generate_dryrun_config
+
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "rendered_dpo.yaml"
+        output_dir = Path("experiments/phase04/dryrun/dpo_1_7b_beta_0_1")
+        sft_adapter = _dryrun_output_dir("sft", "1_7b")
+        _generate_dryrun_config(
+            Path("configs/training/phase04_dpo_qwen3_1_7b_beta_0_1.yaml"),
+            out, output_dir, "dpo",
+            local_model_path=Path("models/hf_cache/Qwen_Qwen3-1.7B-Base"),
+            adapter_override=sft_adapter,
+            extra_overrides={"pref_beta": 0.1, "pref_loss": "sigmoid"},
         )
-        # If llamafactory-cli is not installed, the subprocess call will fail
-        # after creating temp files. Verify temp dataset and config were prepared.
-        assert "Temporary DPO dataset" in result.stdout or "phase04_dryrun_dpo_1pair.jsonl" in result.stdout
-        assert "Temporary config" in result.stdout or "phase04_dryrun_dpo_1pair.yaml" in result.stdout
-        assert "llamafactory-cli train" in result.stdout
-    finally:
-        approval_path.unlink(missing_ok=True)
-        # Clean up temp files
-        for p in [DPO_TEMP_DATASET, DPO_TEMP_CONFIG]:
-            if p.exists():
-                p.unlink(missing_ok=True)
-        manifest_path = Path("project-log/phase04_dryrun_manifest.json")
-        manifest_path.unlink(missing_ok=True)
+        data = yaml.safe_load(out.read_text(encoding="utf-8"))
+        assert "sft_1_7b" in str(data["adapter_name_or_path"]).replace("\\", "/")
+        assert "checkpoint-best" not in str(data["adapter_name_or_path"])
 
 
 def test_dpo_dryrun_temp_yaml_contains_pref_beta():
@@ -231,7 +227,8 @@ def test_dryrun_sft_creates_temp_dataset():
         # Either way, verify the stdout shows the temp dataset was prepared.
         assert "Temporary SFT dataset" in result.stdout or "phase04_dryrun_sft_1row.jsonl" in result.stdout
         assert "Temporary SFT config" in result.stdout or "phase04_dryrun_sft_1row.yaml" in result.stdout
-        assert "llamafactory-cli train" in result.stdout
+        # Platform-independent: the cli name may carry a .exe suffix on Windows.
+        assert "llamafactory-cli" in result.stdout and " train " in result.stdout
     finally:
         approval_path.unlink(missing_ok=True)
         # Clean up temp files

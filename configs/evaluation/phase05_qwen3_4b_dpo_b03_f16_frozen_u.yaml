@@ -1,0 +1,23 @@
+﻿run_id: phase05_qwen3_4b_dpo_b03_f16_frozen_u
+cases_path: data/eval/frozen_test.jsonl
+backend_config_path: configs/inference/phase05_qwen3_4b_dpo_b03_f16_cpu.yaml
+manifest_path: data/eval/frozen_test.manifest.json
+output_dir: reports/generated/phase05/f16_u
+model_id: Qwen/Qwen3-4B-Instruct-2507
+suite_id: phase02_frozen_test_v1
+device: cpu
+runtime: llama.cpp
+model_format: gguf
+quantization: F16
+gpu_layers: 0
+notes: "Phase 05 same-runtime F16 control: merged Qwen3-4B-Instruct-2507 + DPO beta=0.3, llama.cpp CPU, Unstructured Frozen Test 120 cases"
+tags:
+  - phase05
+  - post_training
+  - 4b
+  - dpo_beta_0_3
+  - f16
+  - frozen
+  - unstructured
+  - llama_cpp
+  - cpu

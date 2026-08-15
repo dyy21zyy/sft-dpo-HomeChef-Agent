@@ -1,0 +1,12 @@
+backend: llama_cpp_server
+base_url: http://127.0.0.1:8080/v1
+model_id: Qwen/Qwen3-4B-Base
+device: cpu
+runtime: llama.cpp
+model_format: gguf
+quantization: Q4_K_M
+gpu_layers: 0
+max_model_length: 2048
+max_new_tokens: 512
+temperature: 0
+timeout_seconds: 900
